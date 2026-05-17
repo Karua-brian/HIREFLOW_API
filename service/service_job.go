@@ -1,0 +1,139 @@
+package service
+
+import (
+	"context"
+	"job_board/domain"
+	"job_board/middleware"
+	"job_board/store"
+)
+
+// Service depends on an interface from store
+// We can mock this in tests
+// JobService defines business logic operations
+type JobService interface {
+
+	// CreateJob applies business rules before storing.
+	CreateJob(ctx context.Context, job *domain.Job) error
+
+	// ListJobs returns jobs (public endpoint)
+	ListJobs(ctx context.Context, limit, offset int) ([]domain.Job, int64, error)
+
+	// ApplyToJob returns jobs applied 
+	ApplyToJob(ctx context.Context, jobId int64) error
+}
+
+
+// Now implementation
+type jobService struct {
+	jobStore store.JobStore // Dependency injected
+	appStore store.ApplicationStore
+	worker JobWorker
+}
+
+// Constructor -> injects store dependency
+func NewJobService(
+	jobStore store.JobStore, 
+	appStore store.ApplicationStore, 
+	worker   JobWorker,
+	) JobService {
+	return &jobService{
+		jobStore: jobStore,
+		appStore: appStore,
+		worker:   worker,
+	}
+}
+
+// CreateJob implements business rules and delegates to the underlying store if supported.
+func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
+
+	// Extract user from context
+	// Authenticatioon middleware should have 
+	user, ok := middleware.UserFromContext(ctx)
+	if !ok {
+		// No authenticated user -> reject
+		return ErrUnauthorized
+	}
+
+	// Only recruiters or admins can create jobs.
+	if user.Role != "recruiter" && user.Role != "admin" {
+		return ErrForbidden
+	}
+
+	// Enforce Ownership:
+	// The job must belong to the authenticated user
+	job.CreatedBy = user.ID
+
+	// Call store to persist
+	return s.jobStore.Create(ctx, job)
+}
+
+// ListJobs returns jobs by delegating to the underlying store if supported.
+func (s *jobService) ListJobs(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
+	// No authentication required
+	// Public endpoint
+	
+	// Enfore defaults
+	if limit <= 0 {
+		limit = 10
+	}
+
+	// Prevent abuse
+	if limit > 100 {
+		limit = 100
+	}
+
+	if offset < 0 {
+		offset = 0
+	}
+
+	jobs, total, err := s.jobStore.List(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return jobs, total, nil
+}
+
+func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
+	return s.appStore.CreateTx(ctx, func(txStore store.ApplicationTxStore) error {
+
+	user, ok := middleware.UserFromContext(ctx)
+	if !ok {
+		return ErrUnauthorized
+	}
+
+	// Only applicants can apply
+	if user.Role != "applicant" {
+		return ErrInvalidRole
+	}
+
+	// Check if alreday applied 
+	exists, err := txStore.Exists(ctx, jobID, user.ID)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return ErrAlreadyApplied
+	}
+ 
+	// Create same application inside the same transaction
+	app := &domain.Application{
+		JobID: jobID,
+		UserID: user.ID,
+	}
+
+	if err := txStore.Create(ctx, app); err != nil {
+		return err
+	}
+
+	// Push event to worker AFTER successful DB operation
+	s.worker.Enqueue(domain.ApplicationEvent{
+		JobID: jobID,
+		UserID: user.ID,
+	})
+	
+	return nil
+	
+	})
+}	
