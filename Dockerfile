@@ -16,6 +16,11 @@ COPY . .
 # Build the go application
 RUN go build -o job-board ./cmd/api/main.go
 
+FROM alpine:3.18
+
+# Copy the built application from the builder stage
+COPY --from=0 /app/job-board /app/job-board
+
 # Expose the port that the application will run on
 EXPOSE 8080
 

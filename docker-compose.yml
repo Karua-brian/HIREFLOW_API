@@ -29,7 +29,7 @@ migrate:
       "-path",
       "/migrations",
       "-database",
-      "postgres://postgres:karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable",
+      "postgres://DB_DSN",
       "up"
     ]  
 
@@ -45,7 +45,7 @@ api:
     - DB_HOST=DB_HOST
     - DB_PORT=5432
     - DB_NAME=DB_NAME
-    - DB_DSN: postgres://postgres:karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable
+    - DB_DSN=DB_DSN
     - JWT_SECRET=JWT_SECRET
     - PORT=8080
   ports:
