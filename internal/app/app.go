@@ -6,6 +6,7 @@
 		"job_board/middleware"
 		"job_board/service"
 		"job_board/store"
+		"job_board/internal/db"
 		"log"
 		"log/slog"
 		"net/http"
