@@ -13,6 +13,9 @@ RUN go mod download
 # Copy the entire project into the working directory
 COPY . .
 
+# Copy the migrations directory to the working directory
+COPY migrations ./migrations
+
 # Build the go application
 RUN go build -o hireflow_API ./cmd/api/main.go
 
@@ -23,7 +26,10 @@ FROM alpine:3.18
 WORKDIR /app
 
 # Copy the built application from the builder stage
-COPY --from=0 /app/hireflow_API /app/hireflow_API
+COPY --from=builder /app/hireflow_API /app/hireflow_API
+
+# Copy the migrations directory from the builder stage
+COPY --from=builder /app/migrations ./migrations
 
 # Expose the port that the application will run on
 EXPOSE 8080
