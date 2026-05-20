@@ -25,10 +25,10 @@
 	// NewApp initializes the application, sets up all dependencies, and returns an instance of App.
 	func NewApp() *App {
 
-		// Load .env file 
-		err := godotenv.Load()
-		if err != nil {
-			log.Fatal("Error loading .env file")
+		// Only load .env file if not running in Docker, since Docker will pass env vars directly
+		if os.Getenv("GO_ENV") != "docker" {
+			_ = godotenv.Load()
+			log.Println("Loaded .env file")
 		}
 		// Load env variables
 		dsn := os.Getenv("DB_DSN")
