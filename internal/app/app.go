@@ -45,7 +45,7 @@
 			*/
 
 		// Initialize the database connection:
-		db, err := sql.Open("postgres", dsn)
+		dbConn, err := sql.Open("postgres", dsn)
 		if err != nil {
 			log.Fatalf("Failed to connect to the database: %v", err)
 		}
@@ -55,6 +55,9 @@
 		if err != nil {
 			log.Fatalf("Failed to ping the database: %v", err)
 		}
+
+		// Run database migrations: after successful connection
+		db.RunMigrations(dbConn) 
 
 		dbName := os.Getenv("DB_NAME")
 		log.Printf("Env database name: %s\n", dbName)
