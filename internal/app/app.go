@@ -51,7 +51,7 @@
 		}
 
 		// Verify database connection:
-		err = db.Ping()
+		err = dbConn.Ping()
 		if err != nil {
 			log.Fatalf("Failed to ping the database: %v", err)
 		}
