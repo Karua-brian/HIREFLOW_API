@@ -15,42 +15,42 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data  
 
-migrate: 
-  image: migrate/migrate
+  migrate: 
+    image: migrate/migrate
 
-  depends_on:
-    - db
+    depends_on:
+      - db
   
-  volumes:
-    - ./migrations:/migrations
+    volumes:
+      - ./migrations:/migrations
 
-  command:
-    [
-      "-path",
-      "/migrations",
-      "-database",
-      "postgres://${DB_DSN}",
-      "up"
-    ]  
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://${DB_DSN}",
+        "up"
+      ]  
 
-api: 
-  build: .
-  container_name: hireflow_api
-  depends_on:
-    - db
-    - migrate
-  environment:
-    - DB_USER=${DB_USER}
-    - DB_PASSWORD=${DB_PASSWORD}
-    - DB_HOST=${DB_HOST}
-    - DB_PORT=${5432}
-    - DB_NAME=${DB_NAME}
-    - DB_DSN=${DB_DSN}
-    - JWT_SECRET=${JWT_SECRET}
-    - PORT=${PORT}
-  ports:
-    - "8080:8080"    
-  restart: always
+  api: 
+    build: .
+    container_name: hireflow_api
+    depends_on:
+      - db
+      - migrate
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${5432}
+      - DB_NAME=${DB_NAME}
+      - DB_DSN=${DB_DSN}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+    ports:
+      - "8080:8080"    
+    restart: always
 
 volumes:
-  postgres_data:
+    postgres_data:
