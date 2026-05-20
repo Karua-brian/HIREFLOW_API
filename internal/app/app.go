@@ -26,9 +26,10 @@
 	func NewApp() *App {
 
 		// Only load .env file if not running in Docker, since Docker will pass env vars directly
-		if os.Getenv("GO_ENV") != "docker" {
-			_ = godotenv.Load()
-			log.Println("Loaded .env file")
+		if err := godotenv.Load(); err != nil {
+			log.Println("No .env file found (using env vars)")
+		} else {
+			log.Println(".env file loaded successfully")
 		}
 		// Load env variables
 		dsn := os.Getenv("DB_DSN")

@@ -45,7 +45,7 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=job_board
-      - DB_DSN=postgres://karuabrian:Karuabrian.2002@db:5432/hireflow_db?sslmode=disable
+      - DB_DSN=postgres://karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable
       - JWT_SECRET=SUPER_SECRET_KEY
       - PORT=8080
     ports:
