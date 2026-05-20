@@ -6,6 +6,8 @@ import (
 
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/postgres"
+
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 // RunMigrations runs the database migrations using the provided database URL
