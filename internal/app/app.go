@@ -62,17 +62,17 @@
 
 		dbName := os.Getenv("DB_NAME")
 		log.Printf("Env database name: %s\n", dbName)
-		err = db.QueryRow("SELECT current_database()").Scan(&dbName)
+		err = dbConn.QueryRow("SELECT current_database()").Scan(&dbName)
 		log.Println("Connected DB:", dbName)
 
 		// =================
 		// Stores
 		// =================
 
-		jobStore := store.NewPostgresJobStore(db)
-		applicationStore := store.NewPostgresApplicationStore(db)
-		userStore := store.NewPostgresUserStore(db)
-		refreshTokenStore := store.NewPostgresRefreshTokenStore(db)
+		jobStore := store.NewPostgresJobStore(dbConn)
+		applicationStore := store.NewPostgresApplicationStore(dbConn)
+		userStore := store.NewPostgresUserStore(dbConn)
+		refreshTokenStore := store.NewPostgresRefreshTokenStore(dbConn)
 
 		// =================
 		// Worker Pool
