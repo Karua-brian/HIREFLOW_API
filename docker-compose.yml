@@ -7,9 +7,9 @@ services:
     container_name: hireflow_db
     restart: always
     environment:
-      POSTGRES_USER: DB_USER
-      POSTGRES_PASSWORD: DB_PASSWORD
-      POSTGRES_DB: DB_NAME
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
@@ -29,7 +29,7 @@ migrate:
       "-path",
       "/migrations",
       "-database",
-      "postgres://DB_DSN",
+      "postgres://${DB_DSN}",
       "up"
     ]  
 
@@ -40,14 +40,14 @@ api:
     - db
     - migrate
   environment:
-    - DB_USER=DB_USER
-    - DB_PASSWORD=DB_PASSWORD
-    - DB_HOST=DB_HOST
-    - DB_PORT=5432
-    - DB_NAME=DB_NAME
-    - DB_DSN=DB_DSN
-    - JWT_SECRET=JWT_SECRET
-    - PORT=8080
+    - DB_USER=${DB_USER}
+    - DB_PASSWORD=${DB_PASSWORD}
+    - DB_HOST=${DB_HOST}
+    - DB_PORT=${5432}
+    - DB_NAME=${DB_NAME}
+    - DB_DSN=${DB_DSN}
+    - JWT_SECRET=${JWT_SECRET}
+    - PORT=${PORT}
   ports:
     - "8080:8080"    
   restart: always
