@@ -1,22 +1,29 @@
-package store
+package repository
 
 import (
 	"context"
+	"job_board/internal/domain"
 	"database/sql"
 	"errors"
-	"job_board/domain"
 )
 
-type PostgresUserStore struct {
+// UserStore defines how the service interacts with persistance for user data
+type UserRepository interface {
+	CreateUser(ctx context.Context, user *domain.User) error
+	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
+	GetUserByID(ctx context.Context, id int64) (*domain.User, error)
+}
+
+type PostgresUserRepository struct {
 	db *sql.DB
 }
 
-func NewPostgresUserStore(db *sql.DB) *PostgresUserStore {
-	return &PostgresUserStore{db: db}
+func NewPostgresUserStore(db *sql.DB) *PostgresUserRepository {
+	return &PostgresUserRepository{db: db}
 }
 
 // CreateUser inserts a new user into the database
-func (s *PostgresUserStore) CreateUser(ctx context.Context, user *domain.User) error {
+func (s *PostgresUserRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	// Query the new user into the database
 	query := `
 	INSERT INTO users (email, password, role)
@@ -33,7 +40,7 @@ func (s *PostgresUserStore) CreateUser(ctx context.Context, user *domain.User) e
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt) // Get the generated ID and set it on the user struct
 }
 
-func (s *PostgresUserStore) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (s *PostgresUserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	// Query the database for a user with the given email
 	row := s.db.QueryRowContext( 
 		ctx, 
@@ -65,7 +72,7 @@ func (s *PostgresUserStore) GetUserByEmail(ctx context.Context, email string) (*
 }	
 
 // GetUserByID retrieves a user by their ID
-func (s *PostgresUserStore) GetUserByID(ctx context.Context, id int64) (*domain.User, error) {
+func (s *PostgresUserRepository) GetUserByID(ctx context.Context, id int64) (*domain.User, error) {
 
 	// Query the database for a user with the given ID
 	query := `

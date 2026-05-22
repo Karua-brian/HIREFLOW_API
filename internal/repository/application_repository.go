@@ -1,12 +1,24 @@
-package store
+package repository
 
 import (
 	"context"
+	"job_board/internal/domain"
 	"database/sql"
-	"job_board/domain"
 	"github.com/jackc/pgconn"
 	"errors"
 )
+
+type ApplicationRepository interface {
+
+	// Create inserts a new application for a job.
+	Create(ctx context.Context, app *domain.Application) error
+
+	// Exists checks if user already applied
+	Exists(ctx context.Context, jobID, userID int64) (bool, error)
+
+	// Inserts a trasactional new applicaation for a job
+	CreateTx(ctx context.Context, fn func(ApplicationTxRepository) error) error
+}
 
 type PostgresApplicationStore struct {
 	db *sql.DB
@@ -65,14 +77,14 @@ func (s *PostgresApplicationStore) Exists(ctx context.Context, jobID, userID int
 	return true, nil
 }
 
-func (s *PostgresApplicationStore) CreateTx(ctx context.Context, fn func(ApplicationTxStore) error) error {
+func (s *PostgresApplicationStore) CreateTx(ctx context.Context, fn func(ApplicationTxRepository) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 
 	// Wrap store with tx
-	txStore := &txApplicationStore{tx: tx}
+	txStore := &txApplicationRepository{tx: tx}
 
 	if err := fn(txStore); err != nil {
 		_ = tx.Rollback()

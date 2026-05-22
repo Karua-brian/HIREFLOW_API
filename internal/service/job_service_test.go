@@ -3,16 +3,16 @@ package service
 import (
 	"context"
 	"errors"
-	"job_board/domain"
-	"job_board/middleware"
-	"job_board/store"
+	"job_board/internal/domain"
+	"job_board/internal/handlers/middleware"
+	"job_board/internal/repository"
 	"sync"
 	"testing"
 )
 
 // mockJobStore implemnts store.JobStore for testing purposes
 // It allows us to test JobService without a database
-type mockJobStore struct {
+type mockJobRepository struct {
 	createFunc func(ctx context.Context, job *domain.Job) error
 	listFunc   func(ctx context.Context, limit, offset int) ([]domain.Job, int64, error)
 }
@@ -22,26 +22,26 @@ type mockWorker struct {
 	event  domain.ApplicationEvent
 }
 
-type mockApplicationStore struct {
+type mockApplicationRepository struct {
 	createFunc func(ctx context.Context, app *domain.Application) error
 	existsFunc func(ctx context.Context, jobID, userID int64) (bool, error)
 }
 
 // CreateTx implements [store.ApplicationStore].
 
-func (m *mockApplicationStore) Create(ctx context.Context, app *domain.Application) error {
+func (m *mockApplicationRepository) Create(ctx context.Context, app *domain.Application) error {
 	return m.createFunc(ctx, app)
 }
 
-func (m *mockApplicationStore) Exists(ctx context.Context, jobID, userID int64) (bool, error) {
+func (m *mockApplicationRepository) Exists(ctx context.Context, jobID, userID int64) (bool, error) {
 	return m.existsFunc(ctx, jobID, userID)
 }
 
-func (m *mockJobStore) Create(ctx context.Context, job *domain.Job) error {
+func (m *mockJobRepository) Create(ctx context.Context, job *domain.Job) error {
 	return m.createFunc(ctx, job)
 }
 
-func (m *mockJobStore) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
+func (m *mockJobRepository) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
 	return m.listFunc(ctx, limit, offset)
 }
 
@@ -50,17 +50,17 @@ func (m *mockWorker) Enqueue(event domain.ApplicationEvent) {
 	m.event = event
 }
 
-func (m *mockApplicationStore) CreateTx(ctx context.Context, fn func(store.ApplicationTxStore) error) error {
+func (m *mockApplicationRepository) CreateTx(ctx context.Context, fn func(repository.ApplicationTxRepository) error) error {
 	return fn(m)
 }
 
 func TestCreateJob_Unauthorized(t *testing.T) {
 
 	// Create a mock store - will not be called in this test
-	mockStore := &mockJobStore{}
+	mockStore := &mockJobRepository{}
 
 	// Create the service
-	svc := NewJobService(mockStore, &mockApplicationStore{}, &mockWorker{},)
+	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
 	// Context without user -> simulated missing authentication
 	ctx := context.Background()
@@ -83,10 +83,10 @@ func TestCreateJob_Unauthorized(t *testing.T) {
 func TestCreateJob_Forbidden(t *testing.T) {
 
 	// Create a mock store -> will not be called in this test
-	mockStore := &mockJobStore{}
+	mockStore := &mockJobRepository{}
 
 	// Create the service
-	svc := NewJobService(mockStore, &mockApplicationStore{}, &mockWorker{},)
+	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
 	// Context with a user who is not recruiter/admin
 	ctx := middleware.WithUser(context.Background(), &domain.User{
@@ -114,7 +114,7 @@ func TestCreateJob_Success(t *testing.T) {
 	// Track if store.Create was called
 	called := false
 
-	mockStore := &mockJobStore{
+	mockStore := &mockJobRepository{
 		createFunc: func(ctx context.Context, job *domain.Job) error {
 			called = true
 
@@ -126,7 +126,7 @@ func TestCreateJob_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewJobService(mockStore, &mockApplicationStore{}, &mockWorker{},)
+	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
 	// Context with recruiter/admin user
 	ctx := middleware.WithUser(context.Background(), &domain.User{
@@ -154,7 +154,7 @@ func TestApplyToJob_Concurrent(t *testing.T) {
 	var mu sync.Mutex
 	created := false
 
-	mockAppStore := &mockApplicationStore{
+	mockAppStore := &mockApplicationRepository{
 		existsFunc: func(ctx context.Context, jobID, userID int64) (bool, error) {
 			mu.Lock()
 			defer mu.Unlock()
@@ -176,7 +176,7 @@ func TestApplyToJob_Concurrent(t *testing.T) {
 	worker := NewWorker(100, 4)
 	worker.Start()
 
-	svc := NewJobService(&mockJobStore{}, mockAppStore, worker,)
+	svc := NewJobService(&mockJobRepository{}, mockAppStore, worker,)
 
 	ctx := middleware.WithUser(context.Background(), &domain.User{
 		ID:   1,

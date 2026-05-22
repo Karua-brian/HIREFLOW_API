@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"job_board/domain"
-	"job_board/middleware"
-	"job_board/store"
+	"job_board/internal/domain"
+	"job_board/internal/handlers/middleware"
+	"job_board/internal/repository"
 )
 
 // Service depends on an interface from store
@@ -25,20 +25,20 @@ type JobService interface {
 
 // Now implementation
 type jobService struct {
-	jobStore store.JobStore // Dependency injected
-	appStore store.ApplicationStore
+	jobRepository repository.JobRepository // Dependency injected
+	appRepository repository.ApplicationRepository
 	worker JobWorker
 }
 
 // Constructor -> injects store dependency
 func NewJobService(
-	jobStore store.JobStore, 
-	appStore store.ApplicationStore, 
+	jobRepository repository.JobRepository, 
+	appRepository repository.ApplicationRepository, 
 	worker   JobWorker,
 	) JobService {
 	return &jobService{
-		jobStore: jobStore,
-		appStore: appStore,
+		jobRepository: jobRepository,
+		appRepository: appRepository,
 		worker:   worker,
 	}
 }
@@ -64,7 +64,7 @@ func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
 	job.CreatedBy = user.ID
 
 	// Call store to persist
-	return s.jobStore.Create(ctx, job)
+	return s.jobRepository.Create(ctx, job)
 }
 
 // ListJobs returns jobs by delegating to the underlying store if supported.
@@ -86,7 +86,7 @@ func (s *jobService) ListJobs(ctx context.Context, limit, offset int) ([]domain.
 		offset = 0
 	}
 
-	jobs, total, err := s.jobStore.List(ctx, limit, offset)
+	jobs, total, err := s.jobRepository.List(ctx, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -95,7 +95,7 @@ func (s *jobService) ListJobs(ctx context.Context, limit, offset int) ([]domain.
 }
 
 func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
-	return s.appStore.CreateTx(ctx, func(txStore store.ApplicationTxStore) error {
+	return s.appRepository.CreateTx(ctx, func(txRepository repository.ApplicationTxRepository) error {
 
 	user, ok := middleware.UserFromContext(ctx)
 	if !ok {
@@ -108,7 +108,7 @@ func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
 	}
 
 	// Check if alreday applied 
-	exists, err := txStore.Exists(ctx, jobID, user.ID)
+	exists, err := txRepository.Exists(ctx, jobID, user.ID)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
 		UserID: user.ID,
 	}
 
-	if err := txStore.Create(ctx, app); err != nil {
+	if err := txRepository.Create(ctx, app); err != nil {
 		return err
 	}
 

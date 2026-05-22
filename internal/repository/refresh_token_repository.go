@@ -1,14 +1,24 @@
-package store
+package repository  
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"job_board/security"
+	"job_board/pkg/security"
 	"log"
 	"strings"
 	"time"
 )
+
+// RefreshTokenStore defines how the service interacts with persistance for refresh tokens
+type RefreshTokenRepository interface {
+	SaveToken(ctx context.Context, userID int64, token string, expires time.Time) error
+	GetUserIDByToken(ctx context.Context, token string) (int64, error)
+	DeleteToken(ctx context.Context, token string) error
+	DeleteExpired(ctx context.Context) error
+}
+
+
 
 type PostgresRefreshTokenStore struct {
 	db *sql.DB

@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"job_board/service"
+	"job_board/internal/service"
 	"log"
 	"net/http"
 )

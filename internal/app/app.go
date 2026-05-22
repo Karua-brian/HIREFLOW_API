@@ -2,11 +2,11 @@
 
 	import (
 		"database/sql"
-		"job_board/handlers"
-		"job_board/middleware"
-		"job_board/service"
-		"job_board/store"
-		"job_board/internal/db"
+		"job_board/internal/handlers"
+		"job_board/internal/handlers/middleware"
+		"job_board/internal/service"
+		"job_board/internal/repository"
+		"job_board/migrations/db"
 		"log"
 		"log/slog"
 		"net/http"
@@ -69,10 +69,10 @@
 		// Stores
 		// =================
 
-		jobStore := store.NewPostgresJobStore(dbConn)
-		applicationStore := store.NewPostgresApplicationStore(dbConn)
-		userStore := store.NewPostgresUserStore(dbConn)
-		refreshTokenStore := store.NewPostgresRefreshTokenStore(dbConn)
+		jobRepository := repository.NewPostgresJobStore(dbConn)
+		applicationRepository := repository.NewPostgresApplicationStore(dbConn)
+		userRepository := repository.NewPostgresUserStore(dbConn)
+		refreshTokenRepository := repository.NewPostgresRefreshTokenStore(dbConn)
 
 		// =================
 		// Worker Pool
@@ -85,8 +85,8 @@
 		// Services
 		// =================
 
-		jobService := service.NewJobService(jobStore, applicationStore, workerPool)
-		authService := service.NewAuthService(userStore, refreshTokenStore)
+		jobService := service.NewJobService(jobRepository, applicationRepository, workerPool)
+		authService := service.NewAuthService(userRepository, refreshTokenRepository)
 
 		// =================
 		// Handlers

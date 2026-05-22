@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"job_board/domain"
+	"job_board/internal/domain"
 )
 
 type contextKey string

@@ -1,21 +1,35 @@
-package store
+package repository
 
 import (
 	"context"
+	"job_board/internal/domain"
 	"database/sql"
-	"job_board/domain"
 )
 
-type PostgresJobStore struct {
+// JobStore defines how the service interacts with persistence
+// The service does NOT care whether this is Postgres, MySQL, or memory
+type JobRepository interface {
+
+	// Create inserts a new job into the database
+	// It should set job.ID and job.CreatedAt.
+	Create(ctx context.Context, job *domain.Job) error
+
+	// List retrieves all jobs
+	// Later we will add pagination and filtering -> List returns jobs with limit
+	//  and offset and also the total number of jobs
+	List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error)
+}
+
+type PostgresJobRepository struct {
 	db *sql.DB
 }
 
-func NewPostgresJobStore(db *sql.DB) *PostgresJobStore {
-	return &PostgresJobStore{db: db}
+func NewPostgresJobStore(db *sql.DB) *PostgresJobRepository {
+	return &PostgresJobRepository{db: db}
 }
 
 // Implement Create
-func (s *PostgresJobStore) Create(ctx context.Context, job *domain.Job) error {
+func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) error {
 
 	query := `
 	INSERT INTO jobs (title, description, company, created_by)
@@ -35,7 +49,7 @@ func (s *PostgresJobStore) Create(ctx context.Context, job *domain.Job) error {
 }
 
 // Implement list
-func (s *PostgresJobStore) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
+func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
 
 	query := `
 	SELECT id, title, description, company, created_at, created_by

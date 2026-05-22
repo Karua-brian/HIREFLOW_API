@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"job_board/domain"
+	"job_board/internal/domain"
 	"sync"
 	"time"
 )

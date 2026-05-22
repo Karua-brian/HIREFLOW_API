@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"job_board/domain"
-	"job_board/middleware"
-	"job_board/store"
+	"job_board/internal/domain"
+	"job_board/internal/repository"
+	"job_board/internal/handlers/middleware"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -19,21 +19,21 @@ type AuthService interface {
 }
 
 type authService struct {
-	userStore store.UserStore
-	refreshTokenStore store.RefreshTokenStore
+	userRepository repository.UserRepository
+	refreshTokenRepository repository.RefreshTokenRepository
 }
 
-func NewAuthService(userStore store.UserStore, refreshTokenStore store.RefreshTokenStore) *authService {
+func NewAuthService(userRepository repository.UserRepository, refreshTokenRepository repository.RefreshTokenRepository) *authService {
 	return &authService{
-		userStore: userStore,
-		refreshTokenStore: refreshTokenStore, //,
+		userRepository: userRepository,
+		refreshTokenRepository: refreshTokenRepository, //,
 	}
 }
 
 // Register implements user registration logic
 func (s *authService) Register(ctx context.Context, email, password, role string) error {
 	// Check if user already exists
-	existingUser, _ := s.userStore.GetUserByEmail(ctx, email)
+	existingUser, _ := s.userRepository.GetUserByEmail(ctx, email)
 
 	// if user already exists, return an error
 	if existingUser != nil {
@@ -62,14 +62,14 @@ func (s *authService) Register(ctx context.Context, email, password, role string
 		Role:     role,
 	}
 
-	return s.userStore.CreateUser(ctx, user)
+	return s.userRepository.CreateUser(ctx, user)
 }
 
 // Login implements user login logic
 func (s *authService) Login(ctx context.Context, email, password string) (string, string, error) {
 	
 	// Fetch user by email
-	user, err := s.userStore.GetUserByEmail(ctx, email)
+	user, err := s.userRepository.GetUserByEmail(ctx, email)
 
 	// If user not found, return an error
 	if err != nil {
@@ -101,7 +101,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 		
 	expires := time.Now().Add(7 * 24 * time.Hour) // Set refresh token to expire in 7 days
 	// Store the refresh token in the database
-	err = s.refreshTokenStore.SaveToken(
+	err = s.refreshTokenRepository.SaveToken(
 		ctx,
 		user.ID,
 		refreshToken,
@@ -130,7 +130,7 @@ func (s *authService) Refresh(ctx context.Context, oldToken string) (string, str
 	// 1. Hash incoming refresh token to compare with stored hash in database
 
 	// 2. Get user ID associated with the refresh token from database
-	userID, err := s.refreshTokenStore.GetUserIDByToken(ctx, oldToken)
+	userID, err := s.refreshTokenRepository.GetUserIDByToken(ctx, oldToken)
 	if err != nil {
 		return "", "", ErrInvalidRefreshToken
 	}
@@ -141,13 +141,13 @@ func (s *authService) Refresh(ctx context.Context, oldToken string) (string, str
 	}
 
 	// 4. Delete old refresh token from database to prevent reuse
-	err = s.refreshTokenStore.DeleteToken(ctx, oldToken)
+	err = s.refreshTokenRepository.DeleteToken(ctx, oldToken)
 	if err != nil {
 		return "", "", err 
 	}
 
 	// 5. Fetch user details from database using user ID
-	user, err := s.userStore.GetUserByID(ctx, userID)
+	user, err := s.userRepository.GetUserByID(ctx, userID)
 	if err != nil {
 		return "", "", err
 	}
@@ -166,7 +166,7 @@ func (s *authService) Refresh(ctx context.Context, oldToken string) (string, str
 
 
 	// 8. Store new hashed refresh token in database
-	err = s.refreshTokenStore.SaveToken(
+	err = s.refreshTokenRepository.SaveToken(
 		ctx,
 		user.ID,
 		newRefreshToken,
@@ -184,11 +184,11 @@ func (s *authService) Refresh(ctx context.Context, oldToken string) (string, str
 func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 
 	// Delete the provided refresh token from the database to invalidate it
-	return s.refreshTokenStore.DeleteToken(ctx, refreshToken)
+	return s.refreshTokenRepository.DeleteToken(ctx, refreshToken)
 }
 
 func (s *authService) CleanupExpiredTokens(ctx context.Context) error {
 
 	// Call store to delete expired refresh tokens from database
-	return s.refreshTokenStore.DeleteExpired(ctx)
+	return s.refreshTokenRepository.DeleteExpired(ctx)
 }

@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"job_board/domain"
-	"job_board/service"
+	"job_board/internal/domain"
+	"job_board/internal/service"
 	"log"
 	"net/http"
 	"strconv"
