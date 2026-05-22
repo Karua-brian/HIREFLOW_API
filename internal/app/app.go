@@ -34,7 +34,7 @@
 		// Load env variables
 		dsn := os.Getenv("DB_DSN")
 
-		/* Fallback to constructing the DSN if DB_DSN is not set
+		// Fallback to constructing the DSN if DB_DSN is not set
 		if dsn == "" {
 			dbHost := os.Getenv("DB_HOST")
 			dbPort := os.Getenv("DB_PORT")
@@ -44,7 +44,6 @@
 
 			dsn = "postgres://" + dbUser + ":" + dbPassword + "@" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=disable"
 		}
-			*/
 
 		// Initialize the database connection:
 		dbConn, err := sql.Open("postgres", dsn)
