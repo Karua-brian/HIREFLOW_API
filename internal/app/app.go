@@ -1,22 +1,22 @@
-	package app
+package app
 
-	import (
-		"database/sql"
-		"job_board/internal/handlers"
-		"job_board/internal/handlers/middleware"
-		"job_board/internal/service"
-		"job_board/internal/repository"
-		"log"
-		"log/slog"
-		"net/http"
-		"os"
+import (
+	"database/sql"
+	"job_board/internal/config"
+	"job_board/internal/handlers"
+	"job_board/internal/handlers/middleware"
+	"job_board/internal/repository"
+	"job_board/internal/service"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
 
-		"github.com/go-chi/chi/v5"
-		"github.com/joho/godotenv"
-		_ "github.com/lib/pq"
-	)
+	"github.com/go-chi/chi/v5"
+	_ "github.com/lib/pq"
+)
 
-	// App encapsulates the entire application, including the router and all dependencies.
+// App encapsulates the entire application, including the router and all dependencies.
 	type App struct {
 		Router http.Handler
 	}
@@ -24,28 +24,11 @@
 	// NewApp initializes the application, sets up all dependencies, and returns an instance of App.
 	func NewApp() *App {
 
-		// Only load .env file if not running in Docker, since Docker will pass env vars directly
-		if err := godotenv.Load(); err != nil {
-			log.Println("No .env file found (using env vars)")
-		} else {
-			log.Println(".env file loaded successfully")
-		}
-		// Load env variables
-		dsn := os.Getenv("DB_DSN")
-
-		// Fallback to constructing the DSN if DB_DSN is not set
-		if dsn == "" {
-			dbHost := os.Getenv("DB_HOST")
-			dbPort := os.Getenv("DB_PORT")
-			dbName := os.Getenv("DB_NAME")
-			dbUser := os.Getenv("DB_USER")
-			dbPassword := os.Getenv("DB_PASSWORD")
-
-			dsn = "postgres://" + dbUser + ":" + dbPassword + "@" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=disable"
-		}
+		// Load configuration (env vars, .env file, etc.)
+		cfg := config.LoadConfig()
 
 		// Initialize the database connection:
-		dbConn, err := sql.Open("postgres", dsn)
+		dbConn, err := sql.Open("postgres", cfg.DBDSN)
 		if err != nil {
 			log.Fatalf("Failed to connect to the database: %v", err)
 		}
