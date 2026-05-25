@@ -3,6 +3,12 @@ services:
 
   db:
     image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U karuabrian -d job_board -h localhost -p 5432"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     container_name: hireflow_db
     restart: always
     environment:
@@ -18,7 +24,8 @@ services:
     image: migrate/migrate
 
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   
     volumes:
       - ./migrations:/migrations
