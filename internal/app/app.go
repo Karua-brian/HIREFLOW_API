@@ -1,18 +1,12 @@
 package app
 
 import (
-	"database/sql"
 	"job_board/internal/config"
 	"job_board/internal/handlers"
-	"job_board/internal/handlers/middleware"
 	"job_board/internal/repository"
 	"job_board/internal/service"
-	"log"
-	"log/slog"
 	"net/http"
-	"os"
 
-	"github.com/go-chi/chi/v5"
 	_ "github.com/lib/pq"
 )
 
@@ -22,39 +16,19 @@ import (
 	}
 
 	// NewApp initializes the application, sets up all dependencies, and returns an instance of App.
-	func NewApp() *App {
+	func NewApp(cfg *config.Config) *App {
 
-		// Load configuration (env vars, .env file, etc.)
-		cfg := config.LoadConfig()
-
-		// Initialize the database connection:
-		dbConn, err := sql.Open("postgres", cfg.DBDSN)
-		if err != nil {
-			log.Fatalf("Failed to connect to the database: %v", err)
-		}
-
-		// Verify database connection:
-		err = dbConn.Ping()
-		if err != nil {
-			log.Fatalf("Failed to ping the database: %v", err)
-		}
-
-		// Run database migrations: after successful connection
-		// db.RunMigrations(dbConn) 
-
-		dbName := os.Getenv("DB_NAME")
-		log.Printf("Env database name: %s\n", dbName)
-		err = dbConn.QueryRow("SELECT current_database()").Scan(&dbName)
-		log.Println("Connected DB:", dbName)
+		// Initialize db connection first, since many components depend on it
+		db := InitDB(cfg)
 
 		// =================
 		// Stores
 		// =================
 
-		jobRepository := repository.NewPostgresJobStore(dbConn)
-		applicationRepository := repository.NewPostgresApplicationStore(dbConn)
-		userRepository := repository.NewPostgresUserStore(dbConn)
-		refreshTokenRepository := repository.NewPostgresRefreshTokenStore(dbConn)
+		jobRepo := repository.NewPostgresJobStore(db)
+		applicationRepo := repository.NewPostgresApplicationStore(db)
+		userRepo := repository.NewPostgresUserStore(db)
+		refreshTokenRepo := repository.NewPostgresRefreshTokenStore(db)
 
 		// =================
 		// Worker Pool
@@ -67,51 +41,24 @@ import (
 		// Services
 		// =================
 
-		jobService := service.NewJobService(jobRepository, applicationRepository, workerPool)
-		authService := service.NewAuthService(userRepository, refreshTokenRepository)
+		jobService := service.NewJobService(jobRepo, applicationRepo, workerPool)
+		authService := service.NewAuthService(userRepo, refreshTokenRepo)
 
 		// =================
 		// Handlers
 		// =================
 
-		// Initialize handlers (set up routes below)
 		jobHandler := handlers.NewJobHandlers(jobService)
 		authHandler := handlers.NewAuthHandlers(authService)
 
 		// =================
 		// Router
 		// =================
-
-		r := chi.NewRouter()
-
-		// Global middleware
-
-		logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-		r.Use(middleware.Logging(logger))
-
-		// Public routes
-		r.Post("/register", authHandler.Register)
-		r.Post("/login", authHandler.Login)
-		r.Post("/refresh", authHandler.Refresh)
-		r.Post("/logout", authHandler.Logout)
-		r.Get("/jobs", jobHandler.ListJobs)
-		r.Get("/health", jobHandler.Health)
-
-		// Protected routes (require authentication)
-		r.Group(func(r chi.Router) {
-			// Apply authentication middleware to all routes in this group
-			r.Use(middleware.JWTAuth)
-
-			// Job routes
-			
-			r.Post("/jobs", jobHandler.CreateJob)
-
-			// Application routes
-			r.Post("/jobs/{id}/apply", jobHandler.ApplyToJob)
-		})
+		
+		router := NewRouter(jobHandler, authHandler)
 
 		return &App{
-			Router: r,
+			Router: router,
 		}
 
 	}

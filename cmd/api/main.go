@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"job_board/internal/app"
+	"job_board/internal/config"
 	"log"
 	"net/http"
 	"os"
@@ -12,20 +13,24 @@ import (
 )
 
 func main() {
+
+	// Load configuration from .env
+	cfg := config.LoadConfig()
+
 	// Initialize the entire application.
-	application := app.NewApp()
+	app := app.NewApp(cfg)
 
 	// Create HTTP server
 	server := &http.Server{
-		Addr: ":8080",
-		Handler: application.Router,
+		Addr: ":" + cfg.PORT,
+		Handler: app.Router,
 	}
 
 	// Run server in separate goroutine
 	go func ()  {
-		log.Printf("Server running on :8080")
+		log.Printf("Server running on: http://localhost:%s\n", cfg.PORT)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server failed: %v", err)
+			log.Fatalf("Server failed: %v", err)
 		}
 	}()
 
