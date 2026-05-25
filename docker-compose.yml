@@ -3,22 +3,26 @@ services:
 
   db:
     image: postgres:16
+    container_name: hireflow_db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: karuabrian
+      POSTGRES_PASSWORD: Karuabrian.2002
+      POSTGRES_DB: job_board
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U karuabrian -d job_board -h localhost -p 5432"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
-    container_name: hireflow_db
-    restart: always
-    environment:
-      POSTGRES_USER: karuabrian
-      POSTGRES_PASSWORD: Karuabrian.2002
-      POSTGRES_DB: job_board
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data  
 
   migrate: 
     image: migrate/migrate
@@ -42,9 +46,13 @@ services:
   api: 
     build: .
     container_name: hireflow_api
+
     depends_on:
-      - db
-      - migrate
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully  
+
     environment:
       - DB_USER=karuabrian
       - DB_PASSWORD=Karuabrian.2002
@@ -54,9 +62,11 @@ services:
       - DB_DSN=postgres://karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable
       - JWT_SECRET=SUPER_SECRET_KEY
       - PORT=8080
+
     ports:
       - "8080:8080"    
-    restart: always
+
+    restart: unless-stopped
 
 volumes:
     postgres_data:

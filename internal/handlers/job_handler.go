@@ -45,6 +45,7 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "missing required fields", http.StatusBadRequest)
 		return
 	}
+	
 
 	// Create domain job object
 	job := &domain.Job{
