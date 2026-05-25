@@ -6,7 +6,6 @@
 		"job_board/internal/handlers/middleware"
 		"job_board/internal/service"
 		"job_board/internal/repository"
-		"job_board/migrations/db"
 		"log"
 		"log/slog"
 		"net/http"
@@ -58,7 +57,7 @@
 		}
 
 		// Run database migrations: after successful connection
-		db.RunMigrations(dbConn) 
+		// db.RunMigrations(dbConn) 
 
 		dbName := os.Getenv("DB_NAME")
 		log.Printf("Env database name: %s\n", dbName)
