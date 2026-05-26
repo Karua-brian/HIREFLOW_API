@@ -24,9 +24,12 @@ func main() {
 	server := &http.Server{
 		Addr: ":" + cfg.PORT,
 		Handler: app.Router,
+		ReadTimeout: 15 * time.Second, // Set reasonable timeouts to prevent hanging connections 
+		WriteTimeout: 10 * time.Second, 
+		IdleTimeout: 120 * time.Second,
 	}
 
-	// Run server in separate goroutine
+	// Start server in separate goroutine
 	go func ()  {
 		log.Printf("Server running on: http://localhost:%s\n", cfg.PORT)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
