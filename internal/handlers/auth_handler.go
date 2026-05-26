@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"job_board/internal/service"
+	"job_board/pkg/response"
 	"log"
 	"net/http"
 )
@@ -30,13 +31,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	// Basic validation (transport-level validation)
 	if input.Email == "" || input.Password == "" || input.Role == "" {
-		http.Error(w, "missing required fileds", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "missing required fileds")
 		return
 	}
 
@@ -52,13 +53,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Attempting to register user with email: %s and role: %s", input.Email, input.Role)
 	if err != nil {
 		if errors.Is(err, service.ErrUserExists) {
-			http.Error(w, "user already exists", http.StatusConflict)
+			response.Error(w, http.StatusConflict, "user already exists")
 			log.Printf("User with email %s already exists", input.Email)
 			return
 		}
 		log.Printf("Error registering user: %v", err)
 
-		http.Error(w, "failed to register user",  http.StatusInternalServerError)
+		response.Error(w, http.StatusInternalServerError, "failed to register user")
 		return
 	}
 	log.Printf("User with email %s successfully registered", input.Email)
@@ -78,14 +79,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	log.Printf("Login attempt for email: %s", input.Email)
 
 	// Basic validation (transport-level validation)
 	if input.Email == "" || input.Password == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "missing required fields")
 		return
 	}
 
@@ -98,11 +99,11 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
-			http.Error(w, "invalid email or password", http.StatusUnauthorized)
+			response.Error(w, http.StatusUnauthorized, "invalid email or password")
 			return
 		}
 
-		http.Error(w, "failed to login", http.StatusInternalServerError)
+		response.Error(w, http.StatusInternalServerError, "failed to login")
 		return
 	}
 
@@ -115,8 +116,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Return success response with token
 	log.Printf("User with email %s successfully logged in", input.Email)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+
+	// Use the response helper to send a JSON response
+	response.JSON(w, http.StatusOK, resp)
 }
 
 // Refresh handles POST /refresh-token
@@ -129,12 +131,12 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Refresh token attempt")
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest,"invalid request body")
 		return
 	}
 
 	if input.RefreshToken == "" {
-		http.Error(w, "missing refresh token", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "missing refresh token")
 		return
 	}
 
@@ -145,7 +147,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		http.Error(w, "invalid refresh token", http.StatusUnauthorized)
+		response.Error(w, http.StatusUnauthorized,"invalid refresh token")
 		return
 	}
 
@@ -154,10 +156,10 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		"access_token": access,
 		"refresh_token": refresh,
 	}
-
 	log.Printf("Refresh token successful, new access token issued")
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+
+	// Return success response with new access token
+	response.JSON(w, http.StatusOK, resp)
 }
 
 // 
@@ -169,12 +171,12 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Logout attempt")
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	if input.RefreshToken == "" {
-		http.Error(w, "missing refresh token", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "missing refresh token")
 		return
 	}
 
@@ -185,7 +187,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err != nil {
-		http.Error(w, "failed to logout", http.StatusInternalServerError)
+		response.Error(w, http.StatusInternalServerError, "failed to logout")
 		return
 	}
 

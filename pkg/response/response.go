@@ -18,8 +18,21 @@ type APIResponse struct {
 }
 
 // JSON is a helper function to send a JSON response with the given status code and data.
-func JSON(w http.ResponseWriter, statusCode int, message string) {
+func JSON(w http.ResponseWriter, statusCode int, data interface{}) {
 
+	// Set the status code and content type header
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	resp := APIResponse{
+		Data: data,
+	}
+
+	json.NewEncoder(w).Encode(resp)
+}
+
+// Error is a helper function to send a JSON error response with the given status code and error message.
+func Error(w http.ResponseWriter, statusCode int, message string) {
 	// Set the status code and content type header
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)

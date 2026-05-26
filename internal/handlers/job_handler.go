@@ -5,6 +5,7 @@ import (
 	"errors"
 	"job_board/internal/domain"
 	"job_board/internal/service"
+	"job_board/pkg/response"
 	"log"
 	"net/http"
 	"strconv"
@@ -35,14 +36,14 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	log.Printf("Received request to create job with body: %v", r.Body)
 
 	// Basic validation (transport-level validation)
 	if input.Title == "" || input.Company == "" {
-		http.Error(w, "missing required fields", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "missing required fields")
 		return
 	}
 	
@@ -63,8 +64,7 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	// Success response
 	log.Printf("Job created successfully with ID %d", job.ID)
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(job)
+	response.JSON(w, http.StatusOK, job)
 }
 
 // ListJobs handles GET /jobs
@@ -103,9 +103,7 @@ func (h *JobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Listed jobs with limit %d and offset %d, total jobs: %d", limit, offset, total)
 
 	// Success response
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	response.JSON(w, http.StatusOK, resp)
 
 }
 
@@ -113,7 +111,7 @@ func (h *JobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 	jobIDStr := chi.URLParam(r, "id")
 	jobID, err := strconv.ParseInt(jobIDStr, 10, 64)
 	if err != nil {
-		http.Error(w, "invalid job id", http.StatusBadRequest)
+		response.Error(w, http.StatusBadRequest, "invalid job id")
 		return
 	}
 
@@ -122,7 +120,7 @@ func (h *JobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Log the status before returning
 		if errors.Is(err, service.ErrAlreadyApplied) {
-			http.Error(w, err.Error(), http.StatusConflict)
+			response.Error(w, http.StatusConflict, err.Error())
 			log.Printf("User has already applied to Job ID %d", jobID)
 			return
 		} else {
@@ -147,14 +145,14 @@ func (h *JobHandler) Health(w http.ResponseWriter, r *http.Request) {
 func (h *JobHandler) mapError(w http.ResponseWriter, err error) {
 	switch err {
 	case service.ErrInvalidRole:
-		http.Error(w, err.Error(), http.StatusForbidden)
+		response.Error(w, http.StatusForbidden, err.Error(), )
 	case service.ErrAlreadyApplied:
-		http.Error(w, err.Error(), http.StatusConflict)
+		response.Error(w, http.StatusConflict, err.Error())
 	case service.ErrUnauthorized:
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		response.Error(w, http.StatusUnauthorized, err.Error())
 	case service.ErrForbidden:
-		http.Error(w, err.Error(), http.StatusForbidden)
+		response.Error(w, http.StatusForbidden, err.Error())
 	default:
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		response.Error(w, http.StatusInternalServerError, "internal server error")
 	}
 }
