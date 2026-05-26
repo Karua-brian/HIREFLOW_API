@@ -1,4 +1,4 @@
-/*package db
+package db
 
 import (
 	"database/sql"
@@ -9,9 +9,9 @@ import (
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
-*/
 
-/* RunMigrations runs the database migrations using the provided database URL
+
+// RunMigrations runs the database migrations using the provided database URL
 func RunMigrations(db *sql.DB) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
@@ -36,4 +36,3 @@ func RunMigrations(db *sql.DB) {
 	log.Println("Migrations applied successfully")
 	
 }
-*/

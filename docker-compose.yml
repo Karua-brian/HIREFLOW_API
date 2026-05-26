@@ -23,34 +23,13 @@ services:
       retries: 5
       start_period: 30s
 
-  migrate: 
-    image: migrate/migrate
-
-    depends_on:
-      db:
-        condition: service_healthy
-  
-    volumes:
-      - ./migrations:/migrations
-
-    command:
-      [
-        "-path",
-        "/migrations",
-        "-database",
-        "postgres://karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable",
-        "up"
-      ]  
-
   api: 
     build: .
     container_name: hireflow_api
 
     depends_on:
       db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully  
+        condition: service_healthy 
 
     environment:
       - DB_USER=karuabrian
