@@ -97,10 +97,10 @@ func (h *JobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 
 	// Structured response
 	resp := map[string]interface{}{
-		"data": jobs,
+		"jobs": jobs,
+		"total": total,
 		"limit": limit,
 		"offset": offset,
-		"total": total,
 	}
 
 	log.Printf("Listed jobs with limit %d and offset %d, total jobs: %d", limit, offset, total)
