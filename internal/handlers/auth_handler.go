@@ -30,14 +30,17 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Role     string `json:"role"` // "recruiter" or "admin"
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := response.DecodeJSON(r, &input); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	// Basic validation (transport-level validation)
 	if input.Email == "" || input.Password == "" || input.Role == "" {
-		response.Error(w, http.StatusBadRequest, "missing required fileds")
+		response.Error(w, http.StatusBadRequest, "missing required fileds", response.ValidationError{
+			Field: "email/password/role",
+			Error: "email, password and role are required",
+		})
 		return
 	}
 
@@ -65,7 +68,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	log.Printf("User with email %s successfully registered", input.Email)
 
 	// Return success response
-	w.WriteHeader(http.StatusCreated)
+	response.JSON(w, http.StatusCreated, map[string]string{
+		"message": "user registered successfully", 
+		})	
 }
 
 // Login handles POST /login
@@ -78,7 +83,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	// Use the response helper to decode JSON body and handle errors
+	if err := response.DecodeJSON(r, &input); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
@@ -86,7 +92,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Basic validation (transport-level validation)
 	if input.Email == "" || input.Password == "" {
-		response.Error(w, http.StatusBadRequest, "missing required fields")
+		response.Error(w, http.StatusBadRequest, "missing required fields", response.ValidationError{
+			Field: "email/password",
+			Error: "email and password are required",
+		})
 		return
 	}
 
@@ -135,8 +144,12 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Basic validation (transport-level validation)
 	if input.RefreshToken == "" {
-		response.Error(w, http.StatusBadRequest, "missing refresh token")
+		response.Error(w, http.StatusBadRequest, "missing refresh token", response.ValidationError{
+			Field: "refresh_token",
+			Error: "refresh token is required",
+		})
 		return
 	}
 
@@ -159,7 +172,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Refresh token successful, new access token issued")
 
 	// Return success response with new access token
-	response.JSON(w, http.StatusOK, resp)
+	response.JSON(w, http.StatusOK, resp)	
 }
 
 // 
@@ -176,7 +189,10 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if input.RefreshToken == "" {
-		response.Error(w, http.StatusBadRequest, "missing refresh token")
+		response.Error(w, http.StatusBadRequest, "missing refresh token", response.ValidationError{
+			Field: "refresh_token",
+			Error: "refresh token is required",
+		})
 		return
 	}
 
@@ -192,5 +208,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Logout successful, refresh token invalidated")
-	w.WriteHeader(http.StatusOK)
+	// Return success response
+	response.JSON(w, http.StatusOK, map[string]string{
+		"message": "logged out successfully",
+	})
 }

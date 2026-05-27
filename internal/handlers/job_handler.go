@@ -43,7 +43,10 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	// Basic validation (transport-level validation)
 	if input.Title == "" || input.Company == "" {
-		response.Error(w, http.StatusBadRequest, "missing required fields")
+		response.Error(w, http.StatusBadRequest, "missing required fields", response.ValidationError{
+			Field: "title/company",
+			Error: "title and company are required",
+		})
 		return
 	}
 	
@@ -120,7 +123,7 @@ func (h *JobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Log the status before returning
 		if errors.Is(err, service.ErrAlreadyApplied) {
-			response.Error(w, http.StatusConflict, err.Error())
+			response.Error(w, http.StatusConflict, "user has already applied to this job")
 			log.Printf("User has already applied to Job ID %d", jobID)
 			return
 		} else {
@@ -132,26 +135,29 @@ func (h *JobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 
 	// Succes response
 	log.Printf("Job ID %d successfully applied to by the current user", jobID)
-	w.WriteHeader(http.StatusCreated)
+	response.JSON(w, http.StatusCreated, map[string]string{
+		"message": "application successful",
+	})
 }
 
 // Health handles GET /health for health checks
 func (h *JobHandler) Health(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	response.JSON(w, http.StatusOK, map[string]string{
+		"status": "ok",
+	})
 }
 
 // mapError maps service errors to HTTP responses.
 func (h *JobHandler) mapError(w http.ResponseWriter, err error) {
 	switch err {
 	case service.ErrInvalidRole:
-		response.Error(w, http.StatusForbidden, err.Error(), )
+		response.Error(w, http.StatusForbidden, "only job seekers can apply to jobs")
 	case service.ErrAlreadyApplied:
-		response.Error(w, http.StatusConflict, err.Error())
+		response.Error(w, http.StatusConflict, "user has already applied to this job")
 	case service.ErrUnauthorized:
-		response.Error(w, http.StatusUnauthorized, err.Error())
+		response.Error(w, http.StatusUnauthorized, "unauthorized")
 	case service.ErrForbidden:
-		response.Error(w, http.StatusForbidden, err.Error())
+		response.Error(w, http.StatusForbidden, "forbidden")
 	default:
 		response.Error(w, http.StatusInternalServerError, "internal server error")
 	}
