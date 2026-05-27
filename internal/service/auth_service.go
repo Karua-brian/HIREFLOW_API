@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"job_board/internal/domain"
-	"job_board/internal/repository"
 	"job_board/internal/handlers/middleware"
+	"job_board/internal/repository"
+	"log"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -37,12 +38,7 @@ func (s *authService) Register(ctx context.Context, email, password, role string
 
 	// if user already exists, return an error
 	if existingUser != nil {
-		return ErrUserExists
-	}
-
-	// Validate role (must be either "applicant" or "recruiter")
-	if role != "applicant" && role != "recruiter" {
-		return ErrInvalidRole
+		return ErrUserEmailExists
 	}
 
 	// Hash the password using a secure hashing algorithm (e.g., bcrypt)
@@ -71,11 +67,17 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	// Fetch user by email
 	user, err := s.userRepository.GetUserByEmail(ctx, email)
 
-	// If user not found, return an error
+	// If an error occurs while fetching the user, return invalid credentials error
 	if err != nil {
 		return "", "", ErrInvalidCredentials
 	}
 
+	// If user is nil, return an error
+	if user == nil {
+		return "", "", ErrInvalidCredentials
+	}
+
+	log.Printf("USER: %v", user)
 	// Compare the provided password with the stored hashed password
 	err = bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),

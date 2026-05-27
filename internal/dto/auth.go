@@ -7,7 +7,7 @@ import ()
 // They are used to decode incoming JSON data into 
 // Go structs that can be easily processed by the handlers and service layer.
 type RegisterRequest struct {
-	Eamil  string `json:"email"`
+	Email  string `json:"email"`
 	Password string `json:"password"`
 	Role string `json:"role"` // "recruiter" or "applicant"
 }

@@ -107,7 +107,7 @@ func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
 		return ErrInvalidRole
 	}
 
-	// Check if alreday applied 
+	// Check if already applied 
 	exists, err := txRepository.Exists(ctx, jobID, user.ID)
 	if err != nil {
 		return err

@@ -12,11 +12,11 @@ type ListJobsResponse struct {
 	Jobs   []JobSummary `json:"jobs"`
 	Limit  int          `json:"limit"`
 	Offset int          `json:"offset"`
-	Total  int          `json:"total"`
+	Total  int64          `json:"total"`
 }
 
 type JobSummary struct {
-	ID          int    `json:"id"`
+	ID          int64    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Company     string `json:"company"`

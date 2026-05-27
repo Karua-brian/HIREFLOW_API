@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
+	"job_board/internal/dto"
 	"job_board/internal/service"
+	"job_board/internal/validator"
 	"job_board/pkg/response"
 	"log"
 	"net/http"
@@ -22,98 +23,92 @@ func NewAuthHandlers(s service.AuthService) *AuthHandler {
 // Register handles POST /register
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	
-	// Decode request body into struct
-	// We only accept Email, Password, Role from client
-	var input struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		Role     string `json:"role"` // "recruiter" or "admin"
-	}
+	// import the Register request struct from the dto package
+	var req dto.RegisterRequest
 
-	if err := response.DecodeJSON(r, &input); err != nil {
+	// Use the response helper to decode JSON body and handle errors
+	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-
+	
 	// Basic validation (transport-level validation)
-	if input.Email == "" || input.Password == "" || input.Role == "" {
-		response.Error(w, http.StatusBadRequest, "missing required fileds", response.ValidationError{
+	if err := validator.ValidateRegister(
+		req.Email,
+		req.Password,
+		req.Role,
+	); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
 			Field: "email/password/role",
-			Error: "email, password and role are required",
+			Error: err.Error(),
 		})
-		return
+		return	
 	}
-
-	// Call service layer (business rules happen there)
+	
+	// Call service layer to register the user and handle specific errors
 	err := h.authService.Register(
 		r.Context(),
-		input.Email,
-		input.Password,
-		input.Role,
+		req.Email,
+		req.Password,
+		req.Role,
 	)
+	log.Printf("Registration attempt for email: %s", req.Email)
 
-
-	log.Printf("Attempting to register user with email: %s and role: %s", input.Email, input.Role)
+	// Handle specific service errors and return appropriate HTTP responses
 	if err != nil {
-		if errors.Is(err, service.ErrUserExists) {
-			response.Error(w, http.StatusConflict, "user already exists")
-			log.Printf("User with email %s already exists", input.Email)
+		if errors.Is(err, service.ErrUserEmailExists) {
+			h.mapError(w, err) // Map to 409 Conflict
+			log.Printf("Registration failed for email %s: email already exists", req.Email)
 			return
 		}
-		log.Printf("Error registering user: %v", err)
-
-		response.Error(w, http.StatusInternalServerError, "failed to register user")
-		return
 	}
-	log.Printf("User with email %s successfully registered", input.Email)
 
 	// Return success response
 	response.JSON(w, http.StatusCreated, map[string]string{
 		"message": "user registered successfully", 
 		})	
+	log.Printf("User with email %s successfully registered", req.Email)	
 }
 
 // Login handles POST /login
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
-	// Decode request body into struct
-	// We only accept Email, Password from client
-	var input struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+	// import the Login request struct from the dto package
+	var req dto.LoginRequest 
 
 	// Use the response helper to decode JSON body and handle errors
-	if err := response.DecodeJSON(r, &input); err != nil {
+	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	log.Printf("Login attempt for email: %s", input.Email)
 
 	// Basic validation (transport-level validation)
-	if input.Email == "" || input.Password == "" {
-		response.Error(w, http.StatusBadRequest, "missing required fields", response.ValidationError{
+	if err := validator.ValidateLogin(
+		req.Email,
+		req.Password,
+	); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
 			Field: "email/password",
-			Error: "email and password are required",
+			Error: err.Error(),
 		})
-		return
+		return	
 	}
+	log.Printf("Login attempt for email: %s", req.Email)
 
-	// Call service layer
+	// Call service layer to login the user and handle specific errors
 	token, refresh, err := h.authService.Login(
 		r.Context(),
-		input.Email,
-		input.Password,
+		req.Email,
+		req.Password,
 	)
 
+	// Handle specific service errors and return appropriate HTTP responses
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
-			response.Error(w, http.StatusUnauthorized, "invalid email or password")
+			h.mapError(w, err) // Map to 401 Unauthorized
+			log.Printf("Login failed for email %s: invalid credentials", req.Email)
 			return
 		}
-
-		response.Error(w, http.StatusInternalServerError, "failed to login")
-		return
 	}
 
 	// Return the token in the response
@@ -124,7 +119,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return success response with token
-	log.Printf("User with email %s successfully logged in", input.Email)
+	log.Printf("User with email %s successfully logged in", req.Email)
 
 	// Use the response helper to send a JSON response
 	response.JSON(w, http.StatusOK, resp)
@@ -134,34 +129,35 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	// Decode req body into struct
-	var input struct {
-		RefreshToken string `json:"refresh_token"`
-	}
+	var req dto.RefreshTokenRequest
 
-	log.Printf("Refresh token attempt")
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest,"invalid request body")
 		return
 	}
 
 	// Basic validation (transport-level validation)
-	if input.RefreshToken == "" {
-		response.Error(w, http.StatusBadRequest, "missing refresh token", response.ValidationError{
+	if err := validator.ValidateRefreshToken(req.RefreshToken); err != nil {
+		response.Error(w, http.StatusBadRequest,"validation error", response.ValidationError{
 			Field: "refresh_token",
-			Error: "refresh token is required",
+			Error: err.Error(),
 		})
-		return
+		return	
 	}
+	log.Printf("Refresh token attempt")
 
 	// Call service layer to refresh the token
 	access, refresh, err := h.authService.Refresh(
 		r.Context(),
-		input.RefreshToken,
+		req.RefreshToken,
 	)
 
 	if err != nil {
-		response.Error(w, http.StatusUnauthorized,"invalid refresh token")
-		return
+		if errors.Is(err, service.ErrInvalidRefreshToken) {
+			h.mapError(w, err) // Map to 401 Unauthorized
+			log.Printf("Refresh token failed: invalid refresh token")
+			return
+		}
 	}
 
 	// Return the user ID associated with the refresh token
@@ -178,38 +174,53 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 // 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Decode req body into struct
-	var input struct {
-		RefreshToken string `json:"refresh_token"`
-	}
+	var req dto.RefreshTokenRequest
 
-	log.Printf("Logout attempt")
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	if input.RefreshToken == "" {
-		response.Error(w, http.StatusBadRequest, "missing refresh token", response.ValidationError{
+	// Basic validation
+	if err := validator.ValidateRefreshToken(req.RefreshToken); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
 			Field: "refresh_token",
-			Error: "refresh token is required",
+			Error: err.Error(),
 		})
 		return
 	}
+	log.Printf("Logout attempt")
 
 	// Call service layer to logout (delete the refresh token)
 	err := h.authService.Logout(
 		r.Context(),
-		input.RefreshToken,
+		req.RefreshToken,
 	)
 
 	if err != nil {
-		response.Error(w, http.StatusInternalServerError, "failed to logout")
-		return
-	}
+		if errors.Is(err, service.ErrInvalidRefreshToken) {
+			h.mapError(w, err) // Map to 401 Unauthorized
+			log.Printf("Logout failed: invalid refresh token")
+			return
+		}
+	}	
 
 	log.Printf("Logout successful, refresh token invalidated")
 	// Return success response
 	response.JSON(w, http.StatusOK, map[string]string{
 		"message": "logged out successfully",
 	})
+}
+
+func (h *AuthHandler) mapError(w http.ResponseWriter, err error) {
+	switch err {
+	case service.ErrUserEmailExists:
+		response.Error(w, http.StatusConflict, "email exists")
+	case service.ErrInvalidCredentials:
+		response.Error(w, http.StatusUnauthorized, "invalid email or password")
+	case service.ErrInvalidRefreshToken:
+		response.Error(w, http.StatusUnauthorized, "invalid refresh token")	
+	default:
+		response.Error(w, http.StatusInternalServerError, "internal server error")
+	}
 }

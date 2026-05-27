@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"job_board/internal/domain"
+	"job_board/internal/dto"
 	"job_board/internal/service"
+	"job_board/internal/validator"
 	"job_board/pkg/response"
 	"log"
 	"net/http"
@@ -29,79 +30,113 @@ func (h *JobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	// Decode request body into domain.Job
 	// We only accept Title, Description, Company from client
-	var input struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Company     string `json:"company"`
-	}
+	var req dto.CreateJobRequest
 	
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	log.Printf("Received request to create job with body: %v", r.Body)
 
 	// Basic validation (transport-level validation)
-	if input.Title == "" || input.Company == "" {
-		response.Error(w, http.StatusBadRequest, "missing required fields", response.ValidationError{
+	if err := validator.ValidateCreateJob(req.Title, req.Company); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
 			Field: "title/company",
-			Error: "title and company are required",
+			Error: err.Error(),
 		})
 		return
 	}
+	log.Printf("Received request to create job with body: %v", r.Body)
 	
 
 	// Create domain job object
 	job := &domain.Job{
-		Title:       input.Title,
-		Description: input.Description,
-		Company:     input.Company,
+		Title:       req.Title,
+		Description: req.Description,
+		Company:     req.Company,
 	}
 
 	// Call service layer (business rules happen there)
 	err := h.service.CreateJob(r.Context(), job)
+
 	if err != nil {
-		h.mapError(w, err)
-		return
+		if errors.Is(err, service.ErrUnauthorized) {
+			h.mapError(w, err) // Map to 401 unauthorized
+			log.Printf("unauthorized attempt to create job: %v", err)
+			return
+		}
 	}
 
 	// Success response
 	log.Printf("Job created successfully with ID %d", job.ID)
-	response.JSON(w, http.StatusOK, job)
+	response.JSON(w, http.StatusOK, job)	
 }
 
 // ListJobs handles GET /jobs
 func (h *JobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
-	// Parse Query parameters
+
+	// Parse query params for pagination
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+
+	// Set default values if not provided
 	limit := 10
 	offset := 0
 
-	log.Printf("Received request to list jobs with query params: %v", r.URL.Query())
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if v, err := strconv.Atoi(l); err == nil {
-			limit = v
-		}
+	// Basic validation (transport-level validation)
+	if err := validator.ValidateListJobs(limit, offset); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
+			Field: "limit/offset",
+			Error: err.Error(),
+		})
+		return
 	}
 
-	if o := r.URL.Query().Get("offset"); o != "" {
-		if v, err := strconv.Atoi(o); err == nil {
-			offset = v
+	// Parse limit and offset if provided
+	if limitStr != "" {
+		parsedLimit, err := strconv.Atoi(limitStr)
+		if err != nil || parsedLimit < 0 {
+			response.Error(w, http.StatusBadRequest, "invalid limit parameter")
+			return
 		}
+		limit = parsedLimit
 	}
 
+	if offsetStr != "" {
+		parsedOffset, err := strconv.Atoi(offsetStr)
+		if err != nil || parsedOffset < 0 {
+			response.Error(w, http.StatusBadRequest, "invalid offset parameter")
+			return
+		}
+		offset = parsedOffset
+	}
+
+	log.Printf("Listing jobs with limit %d and offset %d", limit, offset)
+
+	// Call service layer to get jobs and total count
 	jobs, total, err := h.service.ListJobs(r.Context(), limit, offset)
 	if err != nil {
-		h.mapError(w, err)
+		log.Printf("Failed to list jobs: %v", err)
+		response.Error(w, http.StatusInternalServerError, "failed to list jobs")
 		return
 	}
 
 	// Structured response
-	resp := map[string]interface{}{
-		"jobs": jobs,
-		"total": total,
-		"limit": limit,
-		"offset": offset,
+	var resp dto.ListJobsResponse
+
+	// Map domain jobs to DTO job summaries
+	resp.Jobs = make([]dto.JobSummary, len(jobs))
+	for i, job := range jobs {
+		resp.Jobs[i] = dto.JobSummary{
+			ID:          job.ID,
+			Title:       job.Title,
+			Description: job.Description,
+			Company:     job.Company,
+		}
 	}
+	// Include pagination metadata in the response
+	resp.Limit = limit
+	resp.Offset = offset
+	resp.Total = total
 
 	log.Printf("Listed jobs with limit %d and offset %d, total jobs: %d", limit, offset, total)
 
@@ -111,25 +146,50 @@ func (h *JobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *JobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
+
+	// Extract job ID from URL path
 	jobIDStr := chi.URLParam(r, "id")
 	jobID, err := strconv.ParseInt(jobIDStr, 10, 64)
+
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid job id")
 		return
 	}
 
-	log.Printf("Received application request for Job ID %d", jobID)
+	// Basic validation (transport-level validation)
+	if err := validator.ValidateApplyJob(jobID); err != nil {
+		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
+			Field: "job_id/role",
+			Error: err.Error(),
+		})
+		return
+	}
+	log.Printf("Received request to apply to Job ID %d", jobID)
+
+	// Call service layer to apply to the job
 	err = h.service.ApplyToJob(r.Context(), jobID)
 	if err != nil {
 		// Log the status before returning
 		if errors.Is(err, service.ErrAlreadyApplied) {
-			response.Error(w, http.StatusConflict, "user has already applied to this job")
+			h.mapError(w, err) // Map to 409 Conflict
 			log.Printf("User has already applied to Job ID %d", jobID)
 			return
-		} else {
-			log.Printf("Failed to apply to Job ID %d: %v", jobID, err)
-		}
-		h.mapError(w, err)
+		} else if errors.Is(err, service.ErrInvalidRole) {
+			h.mapError(w, err) // Map to 403 Forbidden
+			log.Printf("User with invalid role attempted to apply to Job ID %d", jobID)
+			return
+		} else if errors.Is(err, service.ErrUnauthorized) {
+			h.mapError(w, err) // Map to 401 Unauthorized
+			log.Printf("Unauthorized user attempted to apply to Job ID %d", jobID)
+			return
+		} else if errors.Is(err, service.ErrForbidden) {
+			h.mapError(w, err) // Map to 403 Forbidden
+			log.Printf("Forbidden action: user attempted to apply to Job ID %d", jobID)
+			return
+		 }
+
+		log.Printf("Failed to apply to Job ID %d: %v", jobID, err)
+		response.Error(w, http.StatusInternalServerError, "failed to apply to job")
 		return
 	}
 
@@ -156,8 +216,6 @@ func (h *JobHandler) mapError(w http.ResponseWriter, err error) {
 		response.Error(w, http.StatusConflict, "user has already applied to this job")
 	case service.ErrUnauthorized:
 		response.Error(w, http.StatusUnauthorized, "unauthorized")
-	case service.ErrForbidden:
-		response.Error(w, http.StatusForbidden, "forbidden")
 	default:
 		response.Error(w, http.StatusInternalServerError, "internal server error")
 	}

@@ -12,8 +12,7 @@ var (
 	ErrAlreadyApplied = errors.New("already applied to this job")
 	ErrInvalidRole = errors.New("invalid role")
 	ErrDuplicate = errors.New("duplicate entry")
-	ErrUserExists = errors.New("user already exists")
+	ErrUserEmailExists = errors.New("email already in use")
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
-	
 )
