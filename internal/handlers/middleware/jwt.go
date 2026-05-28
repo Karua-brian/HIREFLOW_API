@@ -15,10 +15,11 @@ var secret = os.Getenv("JWT_SECRET")
 // Convert secret to byte slice for signing
 var jwtSecret = []byte(secret)
 
-
+// GenerateJWT creates a JWT token with user ID and role as claims, 
+// signed with the secret key.
 func GenerateJWT(userID int64, role string) (string, error) {
 	
-	// Define token claims
+	//	Define token claims
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"role"   : role,

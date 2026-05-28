@@ -78,6 +78,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	}
 
 	log.Printf("USER: %v", user)
+
 	// Compare the provided password with the stored hashed password
 	err = bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
@@ -102,6 +103,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	}
 		
 	expires := time.Now().Add(7 * 24 * time.Hour) // Set refresh token to expire in 7 days
+	
 	// Store the refresh token in the database
 	err = s.refreshTokenRepository.SaveToken(
 		ctx,

@@ -2,14 +2,15 @@ package middleware
 
 import (
 	"context"
+	"job_board/internal/contextkeys"
 	"job_board/internal/domain"
+	"job_board/internal/validator"
+	"job_board/pkg/response"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
-
-// contextKey is declared in another file in this package to avoid redeclaration.
 
 // JWTAuth is a middleware that checks for a valid JWT token in the Authorization header.
 func JWTAuth(next http.Handler) http.Handler {
@@ -18,28 +19,22 @@ func JWTAuth(next http.Handler) http.Handler {
 		// Get the token from the Authorization header
 		authHeader := r.Header.Get("Authorization")
 
-		// Check if the Authorization header is present and has the correct format
-		if authHeader == "" {
-			http.Error(w, "Authorization header is missing", http.StatusUnauthorized)
-			return 
+		// Validate the header format
+		if err := validator.ValidateJWTHeader(authHeader); err != nil {
+			response.Error(w, http.StatusUnauthorized, "Missing or invalid Authorization header")
+			return
 		}
 
-		// Extract the token from the header (assuming "Bearer <token>")
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
-			return 
-		}
-
-		tokenString := parts[1]
+		// Extract the token string (remove "Bearer " prefix)
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Parse and validate the token
-		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
 			return jwtSecret, nil
 		})
 
 		if err != nil || !token.Valid{
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			response.Error(w, http.StatusUnauthorized, "Invalid token")
 			return 
 		}
 
@@ -64,7 +59,7 @@ func JWTAuth(next http.Handler) http.Handler {
 			Role: role,
 		}
 
-		ctx := context.WithValue(r.Context(), userContextKey, user)
+		ctx := context.WithValue(r.Context(), contextkeys.UserKey, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

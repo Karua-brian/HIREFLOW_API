@@ -2,14 +2,13 @@ package middleware
 
 import (
 	"context"
+	"job_board/internal/contextkeys"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-const requestIDKey = contextKey("request_id")
 
 type responseRecorder struct {
 	http.ResponseWriter
@@ -29,7 +28,7 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 			reqID := uuid.New().String()
 
 			// Attach request ID to context
-			ctx := context.WithValue(r.Context(), requestIDKey, reqID)
+			ctx := context.WithValue(r.Context(), contextkeys.RequestIDKey, reqID)
 			r = r.WithContext(ctx)
 
 			// Add request ID to response header

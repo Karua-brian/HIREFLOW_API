@@ -67,7 +67,7 @@ func (s *PostgresUserRepository) GetUserByEmail(ctx context.Context, email strin
 		return nil, err
 	}
 
-	// Return the found user
+	// Return the found user.Email
 	return user, nil
 }	
 
@@ -98,5 +98,6 @@ func (s *PostgresUserRepository) GetUserByID(ctx context.Context, id int64) (*do
 		return nil, err
 	}
 
+	// Return the he found userID
 	return user, nil
 }

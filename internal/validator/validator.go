@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"strings"
 )
 
 // ValidateRegister performs basic validation on the registration input fields.
@@ -80,6 +81,20 @@ func ValidateApplyJob(jobID int64) error {
 	if jobID <= 0 {
 		return errors.New("invalid job ID")
 	}
-	
+
+	return nil
+}
+
+func ValidateJWTHeader(authHeader string) error {
+	if authHeader == "" {
+		return errors.New("Authorization header is missing")
+	}
+
+	// Expected format: "Bearer <token>"
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return errors.New("Invalid Authorization header format")
+	}
+
 	return nil
 }

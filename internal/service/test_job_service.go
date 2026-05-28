@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"job_board/internal/contextkeys"
 	"job_board/internal/domain"
-	"job_board/internal/handlers/middleware"
 	"job_board/internal/repository"
 	"sync"
 	"testing"
@@ -89,7 +89,7 @@ func TestCreateJob_Forbidden(t *testing.T) {
 	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
 	// Context with a user who is not recruiter/admin
-	ctx := middleware.WithUser(context.Background(), &domain.User{
+	ctx := contextkeys.WithUser(context.Background(), &domain.User{
 		ID:   2,
 		Role: "applicant", // not allowed
 	})
@@ -129,7 +129,7 @@ func TestCreateJob_Success(t *testing.T) {
 	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
 	// Context with recruiter/admin user
-	ctx := middleware.WithUser(context.Background(), &domain.User{
+	ctx := contextkeys.WithUser(context.Background(), &domain.User{
 		ID:   1,
 		Role: "recruiter",
 	})
@@ -178,7 +178,7 @@ func TestApplyToJob_Concurrent(t *testing.T) {
 
 	svc := NewJobService(&mockJobRepository{}, mockAppStore, worker,)
 
-	ctx := middleware.WithUser(context.Background(), &domain.User{
+	ctx := contextkeys.WithUser(context.Background(), &domain.User{
 		ID:   1,
 		Role: "applicant",
 	})

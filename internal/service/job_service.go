@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
+	"job_board/internal/contextkeys"
 	"job_board/internal/domain"
-	"job_board/internal/handlers/middleware"
 	"job_board/internal/repository"
 )
 
@@ -48,7 +48,7 @@ func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
 
 	// Extract user from context
 	// Authenticatioon middleware should have 
-	user, ok := middleware.UserFromContext(ctx)
+	user, ok := contextkeys.UserFromContext(ctx)
 	if !ok {
 		// No authenticated user -> reject
 		return ErrUnauthorized
@@ -97,7 +97,7 @@ func (s *jobService) ListJobs(ctx context.Context, limit, offset int) ([]domain.
 func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
 	return s.appRepository.CreateTx(ctx, func(txRepository repository.ApplicationTxRepository) error {
 
-	user, ok := middleware.UserFromContext(ctx)
+	user, ok := contextkeys.UserFromContext(ctx)
 	if !ok {
 		return ErrUnauthorized
 	}
