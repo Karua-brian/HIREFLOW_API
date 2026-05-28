@@ -25,8 +25,16 @@ func JWTAuth(next http.Handler) http.Handler {
 			return
 		}
 
+
+		// Expected format: "Bearer <token>"
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+		response.Error(w, http.StatusUnauthorized, "Invalid Authorization header format")
+		return 
+		}
+
 		// Extract the token string (remove "Bearer " prefix)
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		tokenString := parts[1]
 
 		// Parse and validate the token
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {

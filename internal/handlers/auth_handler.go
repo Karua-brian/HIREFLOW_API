@@ -8,6 +8,7 @@ import (
 	"job_board/pkg/response"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // AuthHandler holds dependencies for authentication related HTTP handlers.
@@ -128,30 +129,27 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // Refresh handles POST /refresh-token
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
-	// Decode req body into struct
-	var req dto.RefreshTokenRequest
+	authHeader := r.Header.Get("Authorization")
 
-	if err := response.DecodeJSON(r, &req); err != nil {
-		response.Error(w, http.StatusBadRequest,"invalid request body")
+	// Validate the header format
+	if err := validator.ValidateJWTHeader(authHeader); err != nil {
+		response.Error(w, http.StatusUnauthorized, "Missing or invalid Authorization header")
 		return
 	}
 
-	// Basic validation (transport-level validation)
-	if err := validator.ValidateRefreshToken(req.RefreshToken); err != nil {
-		response.Error(w, http.StatusBadRequest,"validation error", response.ValidationError{
-			Field: "refresh_token",
-			Error: err.Error(),
-		})
-		return	
+	// Expected format: "Bearer <token>"
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		response.Error(w, http.StatusUnauthorized, "Invalid Authorization header format")
+		return 
 	}
+
+	// Extract the token string (remove "Bearer " prefix)
+	refreshToken := parts[1]
+	
 	log.Printf("Refresh token attempt")
-
-	// Call service layer to refresh the token
-	access, refresh, err := h.authService.Refresh(
-		r.Context(),
-		req.RefreshToken,
-	)
-
+	// Call service layer to refresh the token and handle specific errors
+	access, refresh, err := h.authService.Refresh(r.Context(), refreshToken)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidRefreshToken) {
 			h.mapError(w, err) // Map to 401 Unauthorized
@@ -173,37 +171,35 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 // 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	// Decode req body into struct
-	var req dto.RefreshTokenRequest
+	
+	authHeader := r.Header.Get("Authorization")
 
-	if err := response.DecodeJSON(r, &req); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid request body")
+	// Validate the header format
+	if err := validator.ValidateJWTHeader(authHeader); err != nil {
+		response.Error(w, http.StatusUnauthorized, "Missing or invalid Authorization header")
 		return
 	}
 
-	// Basic validation
-	if err := validator.ValidateRefreshToken(req.RefreshToken); err != nil {
-		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
-			Field: "refresh_token",
-			Error: err.Error(),
-		})
-		return
+	// Expected format: "Bearer <token>"
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		response.Error(w, http.StatusUnauthorized, "Invalid Authorization header format")
+		return 
 	}
-	log.Printf("Logout attempt")
 
-	// Call service layer to logout (delete the refresh token)
-	err := h.authService.Logout(
-		r.Context(),
-		req.RefreshToken,
-	)
+	// Extract the token string (remove "Bearer " prefix)
+	tokenString := parts[1]
 
+	log.Printf("Logout attempt with token")
+
+	err := h.authService.Logout(r.Context(), tokenString)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidRefreshToken) {
 			h.mapError(w, err) // Map to 401 Unauthorized
 			log.Printf("Logout failed: invalid refresh token")
 			return
 		}
-	}	
+	}
 
 	log.Printf("Logout successful, refresh token invalidated")
 	// Return success response
