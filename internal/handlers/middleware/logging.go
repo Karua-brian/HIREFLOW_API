@@ -10,16 +10,19 @@ import (
 	"github.com/google/uuid"
 )
 
+// responseRecorder is a custom ResponseWriter that captures the status code for logging purposes.
 type responseRecorder struct {
 	http.ResponseWriter
-	status int
+	statusCode int
 }
 
+// WriteHeader captures the status code and calls the underlying ResponseWriter's WriteHeader method.
 func (r *responseRecorder) WriteHeader(code int) {
-	r.status = code
+	r.statusCode = code
 	r.ResponseWriter.WriteHeader(code)
 }
 
+// Logging is a middleware that logs incoming HTTP requests and their responses in a structured format using slog.
 func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request)  {
@@ -36,7 +39,7 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			rec := &responseRecorder{
 				ResponseWriter: w,
-				status: 		http.StatusOK,	
+				statusCode: 	http.StatusOK,	
 			}
 
 			// Call next handler
@@ -50,7 +53,7 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 				"request_id", reqID,
 				"method", r.Method,
 				"path", r.URL.Path,
-				"status", rec.status,
+				"status", rec.statusCode,
 				"duration_ms", duration.Milliseconds(),
 				"remote_addr", r.RemoteAddr,
 			)

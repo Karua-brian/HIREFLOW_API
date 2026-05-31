@@ -5,12 +5,13 @@ import (
 	"job_board/internal/domain"
 	"job_board/internal/handlers/middleware"
 	"job_board/internal/repository"
-	"log"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// AuthService defines the interface for authentication related business logic.
 type AuthService interface {
 	Register(ctx context.Context, email, password, role string) error
 	Login(ctx context.Context, email, password string) (string, string, error) // returns a JWT token
@@ -22,12 +23,18 @@ type AuthService interface {
 type authService struct {
 	userRepository repository.UserRepository
 	refreshTokenRepository repository.RefreshTokenRepository
+	logger *zap.Logger
 }
 
-func NewAuthService(userRepository repository.UserRepository, refreshTokenRepository repository.RefreshTokenRepository) *authService {
+func NewAuthService(
+	userRepository repository.UserRepository,
+	refreshTokenRepository repository.RefreshTokenRepository,
+	logger *zap.Logger,
+	) AuthService {
 	return &authService{
 		userRepository: userRepository,
-		refreshTokenRepository: refreshTokenRepository, //,
+		refreshTokenRepository: refreshTokenRepository,
+		logger: logger,
 	}
 }
 
@@ -76,8 +83,6 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 	if user == nil {
 		return "", "", ErrInvalidCredentials
 	}
-
-	log.Printf("USER: %v", user)
 
 	// Compare the provided password with the stored hashed password
 	err = bcrypt.CompareHashAndPassword(

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 // App encapsulates the entire application, including the router and all dependencies.
@@ -16,10 +17,10 @@ import (
 	}
 
 	// NewApp initializes the application, sets up all dependencies, and returns an instance of App.
-	func NewApp(cfg *config.Config) *App {
+	func NewApp(cfg *config.Config, logger *zap.Logger) *App {
 
 		// Initialize db connection first, since many components depend on it
-		db := InitDB(cfg)
+		db := InitDB(cfg, logger)
 
 		// =================
 		// Stores
@@ -42,14 +43,14 @@ import (
 		// =================
 
 		jobService := service.NewJobService(jobRepo, applicationRepo, workerPool)
-		authService := service.NewAuthService(userRepo, refreshTokenRepo)
+		authService := service.NewAuthService(userRepo, refreshTokenRepo, logger)
 
 		// =================
 		// Handlers
 		// =================
 
-		jobHandler := handlers.NewJobHandlers(jobService)
-		authHandler := handlers.NewAuthHandlers(authService)
+		jobHandler := handlers.NewJobHandlers(jobService, logger)
+		authHandler := handlers.NewAuthHandlers(authService, logger)
 
 		// =================
 		// Router

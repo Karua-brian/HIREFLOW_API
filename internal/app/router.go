@@ -10,12 +10,15 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func NewRouter(jobHandler *handlers.JobHandler, authHandler *handlers.AuthHandler) http.Handler {
+func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler) http.Handler {
 	r := chi.NewRouter()
 
 	// Set up logging middleware with slog
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-	
+
+	// Add logging middleware to the router
+	r.Use(middleware.Logging(logger))
+
 	// Public routes
 	r.Post("/register", authHandler.Register)
 	r.Post("/login", authHandler.Login)
@@ -29,7 +32,6 @@ func NewRouter(jobHandler *handlers.JobHandler, authHandler *handlers.AuthHandle
 	r.Group(func(r chi.Router) {
 		// Apply authentication middleware to all routes in this group
 		r.Use(middleware.RequestID)
-		r.Use(middleware.Logging(logger))
 		r.Use(middleware.JWTAuth)
 
 		// Job routes - only authenticated users can create jobs

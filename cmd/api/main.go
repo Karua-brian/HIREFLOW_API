@@ -4,21 +4,31 @@ import (
 	"context"
 	"job_board/internal/app"
 	"job_board/internal/config"
-	"log"
+	"job_board/internal/logger"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 func main() {
 
+	// Initialize logger first so we can log any issues during startup
+	 // or "production" based on cfg.ENV
+	log := logger.Init("development")
+
 	// Load configuration from .env
-	cfg := config.LoadConfig()
+	cfg := config.LoadConfig(log)
+
+	// Initialize logger first so we can log any issues during startup
+	 // or "production" based on cfg.ENV
+	defer log.Sync() // Flush any buffered log entries
 
 	// Initialize the entire application.
-	app := app.NewApp(cfg)
+	app := app.NewApp(cfg, log)
 
 	// Create HTTP server
 	server := &http.Server{
@@ -31,9 +41,9 @@ func main() {
 
 	// Start server in separate goroutine
 	go func ()  {
-		log.Printf("Server running on: http://localhost:%s\n", cfg.PORT)
+		log.Info("Server running on: http://localhost:8080")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed: %v", err)
+			log.Info("Server failed:", zap.Error(err))
 		}
 	}()
 
@@ -46,7 +56,7 @@ func main() {
 	// Block until signal received
 	<-stop
 
-	log.Println("Shutting down server...")
+	log.Info("Shutting down server...")
 
 	// Create timeout context for shutdown
 	ctx, cancel := context.WithTimeout(
@@ -57,7 +67,7 @@ func main() {
 
 	// Attempt graceful shutdown
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("graceful shutdown failed: %v", err)
+		log.Info("graceful shutdown failed:", zap.Error(err))
 	}
-	log.Println("Server exited cleanly")
+	log.Info("Server exited cleanly")
 }

@@ -6,23 +6,34 @@ import (
 	"job_board/internal/service"
 	"job_board/internal/validator"
 	"job_board/pkg/response"
-	"log"
 	"net/http"
 	"strings"
+
+	"go.uber.org/zap"
 )
+type AuthHandler interface {
+	Register(w http.ResponseWriter, r *http.Request)
+	Login(w http.ResponseWriter, r *http.Request)
+	Refresh(w http.ResponseWriter, r *http.Request)
+	Logout(w http.ResponseWriter, r *http.Request)
+}
 
 // AuthHandler holds dependencies for authentication related HTTP handlers.
-type AuthHandler struct {
+type authHandler struct {
 	authService service.AuthService
+	logger *zap.Logger
 }
 
 // Constructor - dependecy injection
-func NewAuthHandlers(s service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: s}
+func NewAuthHandlers(s service.AuthService, logger *zap.Logger) AuthHandler {
+	return &authHandler{
+		authService: s,
+		logger: logger,
+	}
 }
 
 // Register handles POST /register
-func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 	
 	// import the Register request struct from the dto package
 	var req dto.RegisterRequest
@@ -53,13 +64,13 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		req.Password,
 		req.Role,
 	)
-	log.Printf("Registration attempt for email: %s", req.Email)
+	h.logger.Info("Registration attempt for email:", zap.String("email", req.Email))
 
 	// Handle specific service errors and return appropriate HTTP responses
 	if err != nil {
 		if errors.Is(err, service.ErrUserEmailExists) {
 			h.mapError(w, err) // Map to 409 Conflict
-			log.Printf("Registration failed for email %s: email already exists", req.Email)
+			h.logger.Info("Registration failed for email:", zap.String("email", req.Email), zap.Error(err))
 			return
 		}
 	}
@@ -68,11 +79,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusCreated, map[string]string{
 		"message": "user registered successfully", 
 		})	
-	log.Printf("User with email %s successfully registered", req.Email)	
+	h.logger.Info("User with email successfully registered", zap.String("email", req.Email))	
 }
 
 // Login handles POST /login
-func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	// import the Login request struct from the dto package
 	var req dto.LoginRequest 
@@ -94,7 +105,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		})
 		return	
 	}
-	log.Printf("Login attempt for email: %s", req.Email)
+	h.logger.Info("Login attempt for email:", zap.String("email", req.Email))
 
 	// Call service layer to login the user and handle specific errors
 	token, refresh, err := h.authService.Login(
@@ -107,7 +118,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidCredentials) {
 			h.mapError(w, err) // Map to 401 Unauthorized
-			log.Printf("Login failed for email %s: invalid credentials", req.Email)
+			h.logger.Info("Login failed for email: invalid credentials", zap.String("email", req.Email))
 			return
 		}
 	}
@@ -120,14 +131,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return success response with token
-	log.Printf("User with email %s successfully logged in", req.Email)
+	h.logger.Info("User with email successfully logged in", zap.String("email", req.Email))
 
 	// Use the response helper to send a JSON response
 	response.JSON(w, http.StatusOK, resp)
 }
 
 // Refresh handles POST /refresh-token
-func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+func (h *authHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	authHeader := r.Header.Get("Authorization")
 
@@ -147,13 +158,13 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	// Extract the token string (remove "Bearer " prefix)
 	refreshToken := parts[1]
 	
-	log.Printf("Refresh token attempt")
+	h.logger.Info("Refresh token attempt")
 	// Call service layer to refresh the token and handle specific errors
 	access, refresh, err := h.authService.Refresh(r.Context(), refreshToken)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidRefreshToken) {
 			h.mapError(w, err) // Map to 401 Unauthorized
-			log.Printf("Refresh token failed: invalid refresh token")
+			h.logger.Info("Refresh token failed: invalid refresh token")
 			return
 		}
 	}
@@ -163,14 +174,14 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		"access_token": access,
 		"refresh_token": refresh,
 	}
-	log.Printf("Refresh token successful, new access token issued")
+	h.logger.Info("Refresh token successful, new access token issued")
 
 	// Return success response with new access token
 	response.JSON(w, http.StatusOK, resp)	
 }
 
 // 
-func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *authHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	
 	authHeader := r.Header.Get("Authorization")
 
@@ -190,25 +201,25 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Extract the token string (remove "Bearer " prefix)
 	tokenString := parts[1]
 
-	log.Printf("Logout attempt with token")
+	h.logger.Info("Logout attempt with token")
 
 	err := h.authService.Logout(r.Context(), tokenString)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidRefreshToken) {
 			h.mapError(w, err) // Map to 401 Unauthorized
-			log.Printf("Logout failed: invalid refresh token")
+			h.logger.Info("Logout failed: invalid refresh token")
 			return
 		}
 	}
 
-	log.Printf("Logout successful, refresh token invalidated")
+	h.logger.Info("Logout successful, refresh token invalidated")
 	// Return success response
 	response.JSON(w, http.StatusOK, map[string]string{
 		"message": "logged out successfully",
 	})
 }
 
-func (h *AuthHandler) mapError(w http.ResponseWriter, err error) {
+func (h *authHandler) mapError(w http.ResponseWriter, err error) {
 	switch err {
 	case service.ErrUserEmailExists:
 		response.Error(w, http.StatusConflict, "email exists")
