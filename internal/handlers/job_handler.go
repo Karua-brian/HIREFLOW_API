@@ -204,7 +204,7 @@ func (h *jobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Succes response
-	h.logger.Info("Job ID %d successfully applied to by the current user", zap.Int64("job_id", jobID))
+	h.logger.Info("Job successfully applied to by the current user", zap.Int64("job_id", jobID))
 	response.JSON(w, http.StatusCreated, map[string]string{
 		"message": "application successful",
 	})
