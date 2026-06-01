@@ -24,7 +24,7 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler)
 	r.Post("/login", authHandler.Login)
 	r.Post("/refresh", authHandler.Refresh)
 	r.Post("/logout", authHandler.Logout)
-
+	
 	r.Get("/jobs", jobHandler.ListJobs)
 	r.Get("/health", jobHandler.Health)
 

@@ -62,7 +62,11 @@ func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]
 	if err != nil {
 		return nil, 0, err
 	}
+
 	defer rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 
 	var jobs []domain.Job
 
@@ -83,12 +87,12 @@ func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]
 		jobs = append(jobs, job)
 	}
 
-	var total int64
-	err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM jobs").Scan(&total)
-	if err != nil {
-		return nil, 0, err
-	}
+	//var total int64
+	// err = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM jobs").Scan(&total)
+	// if err != nil {
+	// 	return nil, 0, err
+	// }
 
 
-	return jobs, total, rows.Err()
+	return jobs, 0, rows.Err()
 }
