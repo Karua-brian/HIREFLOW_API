@@ -1,3 +1,4 @@
+
 name: Deploy Hireflow API
 
 on:
@@ -8,7 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: CI/CD
+    environment: CI/CD 
 
     steps:
       - name: Checkout code
