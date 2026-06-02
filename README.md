@@ -36,6 +36,11 @@ Handler -> Service -> Store -> PostgreSQL
 
 ## Run Locally
 
+## Deployment
+
+git clone ...
+docker compose up -d --build
+
 ### Start with Docker
 
 ```bash
