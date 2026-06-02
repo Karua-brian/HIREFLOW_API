@@ -57,7 +57,10 @@ docker compose up --build
 
 ### ScreenShots
 
-![Endpoints](assets/terminal.png)
-VPS terminal
+```bash
+![Endpoints](assets/terminal.png) 
+VPS terminal 
 Docker containers running
 successful API requests
+```
+
