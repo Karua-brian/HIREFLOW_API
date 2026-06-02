@@ -13,7 +13,7 @@ import (
 
 // AuthService defines the interface for authentication related business logic.
 type AuthService interface {
-	Register(ctx context.Context, email, password, role string) error
+	Register(ctx context.Context, email, password string) error
 	Login(ctx context.Context, email, password string) (string, string, error) // returns a JWT token
 	Refresh(ctx context.Context, oldToken string) (newAccess string, newRefresh string, err error) // returns new JWT and refresh token
 	Logout(ctx context.Context, refreshToken string) error
@@ -39,7 +39,7 @@ func NewAuthService(
 }
 
 // Register implements user registration logic
-func (s *authService) Register(ctx context.Context, email, password, role string) error {
+func (s *authService) Register(ctx context.Context, email, password string) error {
 	// Check if user already exists
 	existingUser, _ := s.userRepository.GetUserByEmail(ctx, email)
 
@@ -62,7 +62,7 @@ func (s *authService) Register(ctx context.Context, email, password, role string
 	user := &domain.User{
 		Email: 	  email,
 		Password: string(hashedPassword),
-		Role:     role,
+		Role:     "user", // Default role, can be extended to support different roles 
 	}
 
 	return s.userRepository.CreateUser(ctx, user)

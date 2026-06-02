@@ -48,10 +48,9 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := validator.ValidateRegister(
 		req.Email,
 		req.Password,
-		req.Role,
 	); err != nil {
 		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
-			Field: "email/password/role",
+			Field: "email/password",
 			Error: err.Error(),
 		})
 		return	
@@ -62,7 +61,6 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 		r.Context(),
 		req.Email,
 		req.Password,
-		req.Role,
 	)
 	h.logger.Info("Registration attempt for email:", zap.String("email", req.Email))
 

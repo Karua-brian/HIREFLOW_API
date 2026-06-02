@@ -6,7 +6,7 @@ import (
 
 // ValidateRegister performs basic validation on the registration input fields.
 // It checks for required fields and validates the role.
-func ValidateRegister(email, password, role string) error {
+func ValidateRegister(email, password string) error {
 	
 	if email == "" {
 		return errors.New("email is required")
@@ -14,14 +14,6 @@ func ValidateRegister(email, password, role string) error {
 
 	if password == "" {
 		return errors.New("password is required")
-	}
-
-	if role == "" {
-		return errors.New("role is required")
-	}
-	
-	if role != "recruiter" && role != "applicant" {
-		return errors.New("invalid role, must be 'recruiter' or 'applicant'")
 	}
 
 	/* if len(password) < 6 {
