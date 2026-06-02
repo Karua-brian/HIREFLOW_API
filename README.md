@@ -35,11 +35,16 @@ Handler -> Service -> Store -> PostgreSQL
 ---
 
 ## Run Locally
+go run ./cmd/api/main.go
+
+---
 
 ## Deployment
 
 git clone ...
 docker compose up -d --build
+
+---
 
 ### Start with Docker
 
