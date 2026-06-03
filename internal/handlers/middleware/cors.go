@@ -8,7 +8,6 @@ func CORS(next http.Handler) http.Handler {
 
 		allowedOrigins := map[string]bool{
 			"https://hire-flow-frontend-sepia.vercel.app": true,
-    		"https://hire-flow-frontend-d3e998ykv-karuas-projects.vercel.app": true,
 			
 		}
 
