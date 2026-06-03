@@ -18,6 +18,7 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler)
 
 	// Add logging middleware to the router
 	r.Use(middleware.Logging(logger))
+	r.Use(middleware.CORS)
 
 	// Public routes
 	r.Post("/register", authHandler.Register)
