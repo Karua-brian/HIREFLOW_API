@@ -60,6 +60,8 @@ func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
 		return ErrForbidden
 	}
 
+	
+
 	// Enforce Ownership:
 	// The job must belong to the authenticated user
 	job.CreatedBy = user.ID

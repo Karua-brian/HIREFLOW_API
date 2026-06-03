@@ -48,7 +48,7 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Basic validation (transport-level validation)
-	if err := validator.ValidateCreateJob(req.Title, req.Company); err != nil {
+	if err := validator.ValidateCreateJob(req.Title, req.Company, req.Location, req.Salary); err != nil {
 		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
 			Field: "title/company",
 			Error: err.Error(),
@@ -63,6 +63,9 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		Title:       req.Title,
 		Description: req.Description,
 		Company:     req.Company,
+		Location:    req.Location,
+		Salary:      req.Salary,
+		// CreatedBy will be set in the service layer based on the authenticated user
 	}
 
 	// Call service layer (business rules happen there)
@@ -140,6 +143,8 @@ func (h *jobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 			ID:          job.ID,
 			Title:       job.Title,
 			Description: job.Description,
+			Location:    job.Location,
+			Salary:      job.Salary,
 			Company:     job.Company,
 		}
 	}

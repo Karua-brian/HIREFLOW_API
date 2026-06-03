@@ -44,7 +44,7 @@ func ValidateRefreshToken(refreshToken string) error {
 	return nil
 }
 
-func ValidateCreateJob(title, company string) error {
+func ValidateCreateJob(title, company, location, salary string) error {
 	if title == "" {
 		return errors.New("title is required")
 	}
@@ -52,6 +52,16 @@ func ValidateCreateJob(title, company string) error {
 	if company == "" {
 		return errors.New("company is required")
 	}
+
+	if location == "" {
+		location = "Remote" // Default to "Remote" if location is not provided
+	}
+
+	if salary == "" {
+		salary = "Not specified" // Default to "Not specified" if salary is not provided
+	}
+
+	
 
 	return nil
 }

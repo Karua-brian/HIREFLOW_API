@@ -6,6 +6,8 @@ type CreateJobRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Company     string `json:"company"`
+	Location    string `json:"location,omitempty"`
+	Salary      string `json:"salary,omitempty"`
 }
 
 type ListJobsResponse struct {
@@ -20,4 +22,6 @@ type JobSummary struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Company     string `json:"company"`
+	Location    string `json:"location"`
+	Salary      string `json:"salary"`
 }

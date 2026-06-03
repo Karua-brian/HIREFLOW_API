@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"job_board/internal/domain"
 	"database/sql"
+	"job_board/internal/domain"
 )
 
 // JobStore defines how the service interacts with persistence
@@ -32,30 +32,38 @@ func NewPostgresJobStore(db *sql.DB) *PostgresJobRepository {
 func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) error {
 
 	query := `
-	INSERT INTO jobs (title, description, company, created_by)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO jobs (title, description, company, location, salary, created_by)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id, created_at
 	`
 
 	// Use QueryRowContext so we respect request cancellation
-	return s.db.QueryRowContext(
+	err := s.db.QueryRowContext(
 		ctx,
 		query,
 		job.Title,
 		job.Description,
 		job.Company,
 		job.CreatedBy,
+		job.Location,
+		job.Salary,
 	).Scan(&job.ID, &job.CreatedAt)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Implement list
 func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
 
 	query := `
-	SELECT id, title, description, company, created_at, created_by
+	SELECT id, title, description, company, location, salary, created_at, created_by 
 	FROM jobs
 	ORDER BY created_at DESC
-	LIMIT $1 OFFSET $2
+	LIMIT $1 OFFSET $2 
 	`
 
 	rows, err := s.db.QueryContext(ctx, query, limit, offset)
@@ -70,7 +78,7 @@ func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]
 
 	var jobs []domain.Job
 
-	for rows.Next() {
+	for rows.Next() { // Iterate over the rows and scan into Job structs
 		var job domain.Job
 		
 		if err := rows.Scan(
@@ -78,6 +86,8 @@ func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]
 			&job.Title,
 			&job.Description,
 			&job.Company,
+			&job.Location,
+			&job.Salary,
 			&job.CreatedAt,
 			&job.CreatedBy,
 		); err != nil {

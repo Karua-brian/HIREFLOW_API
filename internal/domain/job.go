@@ -10,6 +10,8 @@ type Job struct {
 	Title 			string 		// Job title
 	Description 	string 		// Detailed description
 	Company 		string 		// Company offering the job
+	Location 		string 		// Job location
+	Salary 			string 		// Salary offered
 	CreatedAt		time.Time	// When the job was created
 	CreatedBy		int64		// User ID of the recruiter who created it
 }
