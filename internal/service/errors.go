@@ -15,4 +15,7 @@ var (
 	ErrUserEmailExists = errors.New("email already in use")
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrInvalidRefreshToken = errors.New("invalid refresh token")
+	ErrRecruiterRequestAlreadyExists = errors.New("a pending recruiter request already exists for this user")
+	ErrInvalidStatus = errors.New("invalid status value, must be 'approved' or 'rejected'")
+	ErrRecruiterRequestNotFound = errors.New("recruiter request not found")
 )

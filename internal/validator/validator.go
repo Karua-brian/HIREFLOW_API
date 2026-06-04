@@ -2,6 +2,7 @@ package validator
 
 import (
 	"errors"
+	"strconv"
 )
 
 // ValidateRegister performs basic validation on the registration input fields.
@@ -92,4 +93,43 @@ func ValidateJWTHeader(authHeader string) error {
 	}
 
 	return nil
+}
+
+func ValidateRecruiterRequest(companyName, companyWebsite, message string) error {
+	if companyName == "" {
+		return errors.New("company name is required")
+	}
+
+	if companyWebsite == "" {
+		return errors.New("company website is required")
+	}
+
+	if message == "" {
+		return errors.New("message is required")
+	}
+
+	return nil
+}
+
+func ParsePaginationParams(limitStr, offsetStr string) (int, int, error) {
+	limit := 10
+	offset := 0
+
+	if limitStr != "" {
+		parsedLimit, err := strconv.Atoi(limitStr)
+		if err != nil || parsedLimit < 0 {
+			return 0, 0, errors.New("invalid limit parameter")
+		}
+		limit = parsedLimit
+	}
+
+	if offsetStr != "" {
+		parsedOffset, err := strconv.Atoi(offsetStr)
+		if err != nil || parsedOffset < 0 {
+			return 0, 0, errors.New("invalid offset parameter")
+		}
+		offset = parsedOffset
+	}
+
+	return limit, offset, nil
 }

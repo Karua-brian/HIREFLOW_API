@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler) http.Handler {
+func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler, recruiterHandler handlers.RecruiterHandler) http.Handler {
 	r := chi.NewRouter()
 
 	// Set up logging middleware with slog
@@ -40,7 +40,22 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler)
 
 		// Application routes - only authenticated users can apply to jobs
 		r.Post("/jobs/{id}/apply", jobHandler.ApplyToJob)
+
+		// Recruiter access request route - only authenticated users can request recruiter access
+		r.Post("/recruiter-requests", recruiterHandler.RequestRecruiterAccesss)
 	})
+
+	/* Admin routes for managing recruiter requests
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequestID)
+		r.Use(middleware.JWTAuth)
+		r.Use(middleware.AdminOnly) // Only admins can access these routes
+
+		r.Get("/admin/recruiter-requests", recruiterHandler.ListRecruiterRequests)
+		r.Put("/admin/recruiter-requests/{id}", recruiterHandler.UpdateRecruiterRequestStatus)
+	})
+	*/
+
 
 	return r
 }

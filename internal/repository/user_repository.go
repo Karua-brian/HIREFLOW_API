@@ -18,7 +18,7 @@ type PostgresUserRepository struct {
 	db *sql.DB
 }
 
-func NewPostgresUserStore(db *sql.DB) *PostgresUserRepository {
+func NewPostgresUserRepo(db *sql.DB) *PostgresUserRepository {
 	return &PostgresUserRepository{db: db}
 }
 

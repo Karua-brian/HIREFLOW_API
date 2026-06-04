@@ -91,36 +91,15 @@ func (h *jobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
-	// Set default values if not provided
-	limit := 10
-	offset := 0
-
+	
 	// Basic validation (transport-level validation)
-	if err := validator.ValidateListJobs(limit, offset); err != nil {
-		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
+	limit, offset, err := validator.ParsePaginationParams(limitStr, offsetStr)
+		if err != nil {
+			response.Error(w, http.StatusBadRequest, "invalid pagination parameters", response.ValidationError{
 			Field: "limit/offset",
 			Error: err.Error(),
 		})
 		return
-	}
-
-	// Parse limit and offset if provided
-	if limitStr != "" {
-		parsedLimit, err := strconv.Atoi(limitStr)
-		if err != nil || parsedLimit < 0 {
-			response.Error(w, http.StatusBadRequest, "invalid limit parameter")
-			return
-		}
-		limit = parsedLimit
-	}
-
-	if offsetStr != "" {
-		parsedOffset, err := strconv.Atoi(offsetStr)
-		if err != nil || parsedOffset < 0 {
-			response.Error(w, http.StatusBadRequest, "invalid offset parameter")
-			return
-		}
-		offset = parsedOffset
 	}
 
 	h.logger.Info("Listing jobs with limit and offset:", zap.Int("limit", limit), zap.Int("offset", offset))
@@ -222,16 +201,4 @@ func (h *jobHandler) Health(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// mapError maps service errors to HTTP responses.
-func (h *jobHandler) mapError(w http.ResponseWriter, err error) {
-	switch err {
-	case service.ErrInvalidRole:
-		response.Error(w, http.StatusForbidden, "only job seekers can apply to jobs")
-	case service.ErrAlreadyApplied:
-		response.Error(w, http.StatusConflict, "user has already applied to this job")
-	case service.ErrUnauthorized:
-		response.Error(w, http.StatusUnauthorized, "unauthorized")
-	default:
-		response.Error(w, http.StatusInternalServerError, "internal server error")
-	}
-}
+

@@ -24,7 +24,7 @@ type PostgresJobRepository struct {
 	db *sql.DB
 }
 
-func NewPostgresJobStore(db *sql.DB) *PostgresJobRepository {
+func NewPostgresJobRepo(db *sql.DB) *PostgresJobRepository {
 	return &PostgresJobRepository{db: db}
 }
 

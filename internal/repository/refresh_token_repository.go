@@ -24,7 +24,7 @@ type PostgresRefreshTokenStore struct {
 	db *sql.DB
 }
 
-func NewPostgresRefreshTokenStore(db *sql.DB) *PostgresRefreshTokenStore {
+func NewPostgresRefreshTokenRepo(db *sql.DB) *PostgresRefreshTokenStore {
 	return &PostgresRefreshTokenStore{db: db}
 }
 

@@ -24,7 +24,7 @@ type PostgresApplicationStore struct {
 	db *sql.DB
 }
 
-func NewPostgresApplicationStore(db *sql.DB) * PostgresApplicationStore {
+func NewPostgresApplicationRepo(db *sql.DB) * PostgresApplicationStore {
 	return &PostgresApplicationStore{db: db}
 }
 
