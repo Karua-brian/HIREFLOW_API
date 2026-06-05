@@ -42,7 +42,7 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler,
 		r.Post("/jobs/{id}/apply", jobHandler.ApplyToJob)
 
 		// Recruiter access request route - only authenticated users can request recruiter access
-		r.Post("/recruiter-requests", recruiterHandler.RequestRecruiterAccesss)
+		r.Post("/recruiter/requests", recruiterHandler.RequestRecruiterAccesss)
 	})
 
 	/* Admin routes for managing recruiter requests

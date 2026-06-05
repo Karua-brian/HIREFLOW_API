@@ -14,6 +14,7 @@ import (
 
 type RecruiterHandler interface {
 	RequestRecruiterAccesss(w http.ResponseWriter, r *http.Request)
+	
 	ListRecruiterRequests(w http.ResponseWriter, r *http.Request)
 
 	UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request)

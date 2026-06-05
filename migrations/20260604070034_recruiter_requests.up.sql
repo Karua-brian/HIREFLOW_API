@@ -6,4 +6,4 @@ CREATE TABLE recruiter_requests (
     message TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)
+);
