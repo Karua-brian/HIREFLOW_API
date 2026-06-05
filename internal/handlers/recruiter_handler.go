@@ -19,7 +19,7 @@ type RecruiterHandler interface {
 
 	UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request)
 
-	GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
+	   GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
 }
 
 type recruiterHandler struct {

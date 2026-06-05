@@ -43,12 +43,12 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler,
 
 		// Recruiter access request route - only authenticated users can request recruiter access
 		r.Post("/recruiter/requests", recruiterHandler.RequestRecruiterAccesss)
-		r.Get("/recruiter/status", recruiterHandler.GetMyRecruiterRequest) // Endpoint for users to check their recruiter request status
+		r.Get("/recruiter/requests/me", recruiterHandler.GetMyRecruiterRequest) // Endpoint for users to check their recruiter request status
 
-		// Admin routes for managing recruiter requests
+		/* Admin routes for managing recruiter requests
 		r.Get("/admin/recruiter-requests", recruiterHandler.ListRecruiterRequests)
 		r.Put("/admin/recruiter-requests/{id}", recruiterHandler.UpdateRecruiterRequestStatus)
-
+		*/
 	})
 
 	return r
