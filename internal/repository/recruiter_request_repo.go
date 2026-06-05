@@ -11,7 +11,7 @@ type RecruiterRequestRepository interface {
 	CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error
 
 	// GetRecruiterRequestByID retrieves a recruiter request by its ID
-	GetRecruiterRequestByID(ctx context.Context, id int64) (*domain.RecruiterRequest, error)
+	GetRecruiterRequestByUserID(ctx context.Context, id int64) (*domain.RecruiterRequest, error)
 
 	// ListRecruiterRequests retrieves all recruiter requests with pagination
 	ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error)
@@ -52,15 +52,15 @@ func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.
 	return nil
 }
 
-func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByID(ctx context.Context, id int64) (*domain.RecruiterRequest, error) {
+func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, userID int64) (*domain.RecruiterRequest, error) {
 	query := `
 	SELECT id, user_id, company_name, company_website, message, status, created_at
 	FROM recruiter_requests
-	WHERE id = $1
+	WHERE user_id = $1
 	`
 
 	var req domain.RecruiterRequest
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&req.ID,
 		&req.UserID,
 		&req.CompanyName,
@@ -79,6 +79,7 @@ func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByID(ctx context
 
 	return &req, nil
 }
+
 
 func (r *PostgresRecruiterRequestRepository) ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error) {
 	query := `

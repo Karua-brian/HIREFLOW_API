@@ -15,7 +15,10 @@ type RecruiterService interface {
 	ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error)
 
 	UpdateRecruiterRequestStatus(ctx context.Context, id int64, status string) error
+
+	GetMyRecruiterRequest(ctx context.Context, id int64) (*domain.RecruiterRequest, error)
 }
+
 
 type recruiterService struct {
 	recruiterRequestRepo repository.RecruiterRequestRepository
@@ -27,10 +30,11 @@ func NewRecruiterService(recruiterRequestRepo repository.RecruiterRequestReposit
 	}
 }
 
+// Recruiter
 func (s *recruiterService) RequestRecruiterAccess(ctx context.Context, req *domain.RecruiterRequest) error {
 	req.Status = "pending" // default status for new requests
 
-	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByID(ctx, req.UserID)
+	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, req.UserID)
 	if err != nil && err != repository.ErrNotFound {
 		return err
 	}
@@ -41,9 +45,21 @@ func (s *recruiterService) RequestRecruiterAccess(ctx context.Context, req *doma
 	return s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
 }
 
+func (s *recruiterService) GetMyRecruiterRequest(ctx context.Context, userID int64) (*domain.RecruiterRequest, error) {
+	request, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, userID)
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return nil, ErrRecruiterRequestNotFound
+		}
+		return nil, err
+	}
+
+	return request, nil
+}
+
 func (s *recruiterService) ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error) {
 
-	// Only admins should be able to list recruiter requests. 
+	// Only admins should be able to list recruiter requests.
 	// This check should ideally be done in the handler layer, but we can also enforce it here for extra safety.
 	// Extract user from context
 	user, ok := contextkeys.UserFromContext(ctx)
@@ -65,7 +81,7 @@ func (s *recruiterService) UpdateRecruiterRequestStatus(ctx context.Context, id 
 	}
 
 	// Check if request exists
-	req, err := s.recruiterRequestRepo.GetRecruiterRequestByID(ctx, id)
+	req, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, id)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			return repository.ErrNotFound

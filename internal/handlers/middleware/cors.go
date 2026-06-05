@@ -14,7 +14,7 @@ func CORS(next http.Handler) http.Handler {
 		if allowedOrigins[r.Header.Get("Origin")] {
 			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "https://hire-flow-frontend-sepia.vercel.app/")
+			w.Header().Set("Access-Control-Allow-Origin", "https://hire-flow-frontend-sepia.vercel.app")
 		}
 		
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

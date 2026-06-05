@@ -14,10 +14,12 @@ import (
 
 type RecruiterHandler interface {
 	RequestRecruiterAccesss(w http.ResponseWriter, r *http.Request)
-	
+
 	ListRecruiterRequests(w http.ResponseWriter, r *http.Request)
 
 	UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request)
+
+	GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
 }
 
 type recruiterHandler struct {
@@ -32,6 +34,7 @@ func NewRecruiterHandlers(s service.RecruiterService, logger *zap.Logger) Recrui
 	}
 }
 
+// RequestRecruiterAccesss handles the HTTP request for users to request recruiter access.
 func (h *recruiterHandler) RequestRecruiterAccesss(w http.ResponseWriter, r *http.Request) {
 	// Implementation for handling recruiter access requests
 	var req dto.CreateRecruiterRequest
@@ -77,6 +80,29 @@ func (h *recruiterHandler) RequestRecruiterAccesss(w http.ResponseWriter, r *htt
 	response.JSON(w, http.StatusCreated, resp)
 }
 
+// GetMyRecruiterRequest allows users to check the status of their recruiter access request.
+func (h *recruiterHandler) GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("userID").(int64) // Assuming userID is stored in context after authentication
+
+	request, err := h.service.GetMyRecruiterRequest(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, service.ErrRecruiterRequestNotFound) {
+			response.Error(w, http.StatusNotFound, "no recruiter request found for this user")
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, "failed to retrieve recruiter request status")
+		return
+	}
+
+	var resp dto.RecruiterResponse
+	resp.ID = request.ID
+	resp.Status = request.Status
+	resp.Message = "Recruiter request status retrieved successfully"
+
+	response.JSON(w, http.StatusOK, resp)
+}
+
+// ListRecruiterRequests handles the HTTP request for admins to list recruiter access requests with pagination.
 func (h *recruiterHandler) ListRecruiterRequests(w http.ResponseWriter, r *http.Request) {
 	// Implementation for listing recruiter access requests
 	limitStr := r.URL.Query().Get("limit")
