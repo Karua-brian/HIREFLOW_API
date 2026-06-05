@@ -47,7 +47,7 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler,
 
 		// Admin routes for managing recruiter requests
 		r.Get("/admin/recruiter-requests", recruiterHandler.ListRecruiterRequests)
-		r.Put("admin/recruiter-requests/{id}", recruiterHandler.UpdateRecruiterRequestStatus)
+		r.Put("/admin/recruiter-requests/{id}", recruiterHandler.UpdateRecruiterRequestStatus)
 
 	})
 
