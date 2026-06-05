@@ -13,7 +13,7 @@ import (
 )
 
 type RecruiterHandler interface {
-	RequestRecruiterAccesss(w http.ResponseWriter, r *http.Request)
+	RequestRecruiterAccess(w http.ResponseWriter, r *http.Request)
 
 	ListRecruiterRequests(w http.ResponseWriter, r *http.Request)
 
@@ -35,7 +35,7 @@ func NewRecruiterHandlers(s service.RecruiterService, logger *zap.Logger) Recrui
 }
 
 // RequestRecruiterAccesss handles the HTTP request for users to request recruiter access.
-func (h *recruiterHandler) RequestRecruiterAccesss(w http.ResponseWriter, r *http.Request) {
+func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http.Request) {
 	// Implementation for handling recruiter access requests
 	var req dto.CreateRecruiterRequest
 
