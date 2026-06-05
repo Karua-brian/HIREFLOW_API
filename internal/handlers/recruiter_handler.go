@@ -55,30 +55,35 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 	}
 	h.logger.Info("Received request to create recruiter access with body:", zap.Any("request_body", req))
 
-	user, ok := r.Context().Value(contextkeys.UserKey).(*domain.User) 
+	user, ok := r.Context().Value(contextkeys.UserKey).(*domain.User)
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, "invalid user context")
 	}
 	userID := user.ID
 	// Create domain object for service layer
 	request := &domain.RecruiterRequest{
-		UserID:         userID,
+		RecruiterID:    userID,
 		CompanyName:    req.CompanyName,
 		CompanyWebsite: req.CompanyWebsite,
 		Message:        req.Message,
 	}
 
 	// Call service layer to process the recruiter access request
-	if err := h.service.RequestRecruiterAccess(r.Context(), request); err != nil {
+	err := h.service.RequestRecruiterAccess(r.Context(), request)
+	if err != nil {
+		h.logger.Error("failed to create recruiter request",
+			zap.Error(err),
+			zap.Any("request", request),
+		)
+
 		if errors.Is(err, service.ErrRecruiterRequestAlreadyExists) {
-			response.Error(w, http.StatusConflict, "a pending or approved recruiter request already exists for this user")
+			response.Error(w, http.StatusConflict, "already exists")
 			return
 		}
 
-		response.Error(w, http.StatusInternalServerError, "failed to create request")
+		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	var resp dto.RecruiterResponse
 	resp.ID = request.ID
 	resp.Status = request.Status
@@ -89,8 +94,8 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 
 // GetMyRecruiterRequest allows users to check the status of their recruiter access request.
 func (h *recruiterHandler) GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request) {
-	
-	user, ok := r.Context().Value(contextkeys.UserKey).(*domain.User) 
+
+	user, ok := r.Context().Value(contextkeys.UserKey).(*domain.User)
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, "invalid user context")
 	}
@@ -142,7 +147,7 @@ func (h *recruiterHandler) ListRecruiterRequests(w http.ResponseWriter, r *http.
 	for i, req := range requests {
 		resp.Requests[i] = dto.RecruiterRequestSummary{
 			ID:             req.ID,
-			UserID:         req.UserID,
+			UserID:         req.RecruiterID,
 			CompanyName:    req.CompanyName,
 			CompanyWebsite: req.CompanyWebsite,
 			Message:        req.Message,

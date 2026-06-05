@@ -34,7 +34,7 @@ func NewRecruiterService(recruiterRequestRepo repository.RecruiterRequestReposit
 func (s *recruiterService) RequestRecruiterAccess(ctx context.Context, req *domain.RecruiterRequest) error {
 	req.Status = "pending" // default status for new requests
 
-	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, req.UserID)
+	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, req.RecruiterID)
 	if err != nil && err != repository.ErrNotFound {
 		return err
 	}

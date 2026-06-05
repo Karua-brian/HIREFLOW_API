@@ -30,15 +30,15 @@ func NewPostgresRecruiterRequestRepository(db *sql.DB) *PostgresRecruiterRequest
 
 func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error {
 	query := `
-	INSERT INTO recruiter_requests (user_id, company_name, company_website, message, status)
+	INSERT INTO recruiter_requests (recruiter_id, company_name, company_website, message, status)
 	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, status, created_at
+	RETURNING recruiter_id, status, created_at
 	`
 
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		req.UserID,
+		req.RecruiterID,
 		req.CompanyName,
 		req.CompanyWebsite,
 		req.Message,
@@ -54,15 +54,15 @@ func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.
 
 func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, userID int64) (*domain.RecruiterRequest, error) {
 	query := `
-	SELECT id, user_id, company_name, company_website, message, status, created_at
+	SELECT id, recruiter_id, company_name, company_website, message, status, created_at
 	FROM recruiter_requests
-	WHERE user_id = $1
+	WHERE recruiter_id = $1
 	`
 
 	var req domain.RecruiterRequest
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&req.ID,
-		&req.UserID,
+		&req.RecruiterID,
 		&req.CompanyName,
 		&req.CompanyWebsite,
 		&req.Message,
@@ -83,7 +83,7 @@ func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx con
 
 func (r *PostgresRecruiterRequestRepository) ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error) {
 	query := `
-	SELECT id, user_id, company_name, company_website, message, status, created_at
+	SELECT id, recruiter_id, company_name, company_website, message, status, created_at
 	FROM recruiter_requests
 	ORDER BY created_at DESC
 	LIMIT $1 OFFSET $2
@@ -100,7 +100,7 @@ func (r *PostgresRecruiterRequestRepository) ListRecruiterRequests(ctx context.C
 		var req domain.RecruiterRequest
 		if err := rows.Scan(
 			&req.ID,
-			&req.UserID,
+			&req.RecruiterID,
 			&req.CompanyName,
 			&req.CompanyWebsite,
 			&req.Message,
