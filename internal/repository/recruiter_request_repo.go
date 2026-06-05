@@ -32,7 +32,7 @@ func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.
 	query := `
 	INSERT INTO recruiter_requests (user_id, company_name, company_website, message, status)
 	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, created_at
+	RETURNING id, status, created_at
 	`
 
 	err := r.db.QueryRowContext(

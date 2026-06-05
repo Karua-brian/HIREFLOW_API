@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"job_board/internal/contextkeys"
 	"job_board/internal/domain"
 	"job_board/internal/dto"
 	"job_board/internal/service"
@@ -19,7 +20,7 @@ type RecruiterHandler interface {
 
 	UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request)
 
-	   GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
+	GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
 }
 
 type recruiterHandler struct {
@@ -54,8 +55,11 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 	}
 	h.logger.Info("Received request to create recruiter access with body:", zap.Any("request_body", req))
 
-	userID := r.Context().Value("userID").(int64) // Assuming userID is stored in context after authentication
-
+	user, ok := r.Context().Value(contextkeys.UserKey).(*domain.User) 
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, "invalid user context")
+	}
+	userID := user.ID
 	// Create domain object for service layer
 	request := &domain.RecruiterRequest{
 		UserID:         userID,
@@ -70,6 +74,9 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 			response.Error(w, http.StatusConflict, "a pending or approved recruiter request already exists for this user")
 			return
 		}
+
+		response.Error(w, http.StatusInternalServerError, "failed to create request")
+		return
 	}
 
 	var resp dto.RecruiterResponse
@@ -82,7 +89,12 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 
 // GetMyRecruiterRequest allows users to check the status of their recruiter access request.
 func (h *recruiterHandler) GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value("userID").(int64) // Assuming userID is stored in context after authentication
+	
+	user, ok := r.Context().Value(contextkeys.UserKey).(*domain.User) 
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, "invalid user context")
+	}
+	userID := user.ID
 
 	request, err := h.service.GetMyRecruiterRequest(r.Context(), userID)
 	if err != nil {
