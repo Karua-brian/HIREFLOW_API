@@ -1,10 +1,14 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type RecruiterRequest struct {
-	ID  		 	int64  
-	RecruiterID 	int64
+	ID  		 	uuid.UUID  
+	RecruiterID 	uuid.UUID
 	CompanyName 	string
 	CompanyWebsite  string
 	Message 		string

@@ -1,11 +1,15 @@
 package domain
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // Application represents a user applying to a job
 type Application struct {
-	ID		  int64
-	JobID     int64
-	UserID    int64
+	ID		  uuid.UUID
+	JobID     uuid.UUID
+	UserID    uuid.UUID
 	CreatedAt time.Time
 }

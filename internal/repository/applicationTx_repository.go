@@ -2,15 +2,15 @@ package repository
 
 import (
 	"context"
-	"job_board/internal/domain"
 	"database/sql"
+	"job_board/internal/domain"
 
-	"github.com/lib/pq"
+	"github.com/google/uuid"
 )
 
 type ApplicationTxRepository interface {
 	Create(ctx context.Context, app *domain.Application) error 
-	Exists(ctx context.Context, jobID, userID int64) (bool, error)
+	Exists(ctx context.Context, jobID, userID uuid.UUID) (bool, error)
 }
 
 // txApplicationStore implements ApplicationStore inside a transaction
@@ -33,16 +33,13 @@ func (t *txApplicationRepository) Create(ctx context.Context, app *domain.Applic
 		app.UserID,
 	).Scan(&app.ID, &app.CreatedAt)
 	if err != nil {
-		if pgErr, ok := err.(*pq.Error); ok && pgErr.Code == "23505" {
-			return ErrAlreadyApplied
-		}
-		return err
+		return ErrAlreadyApplied
 	}
 	return nil
 }
 
 // Exists checks if an application already exists in the context of a transaction
-func (t *txApplicationRepository) Exists(ctx context.Context, jobID, userID int64) (bool, error) {
+func (t *txApplicationRepository) Exists(ctx context.Context, jobID, userID uuid.UUID) (bool, error) {
 	var exists int
 	query := `
 	SELECT 1

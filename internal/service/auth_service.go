@@ -7,6 +7,7 @@ import (
 	"job_board/internal/repository"
 	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -145,7 +146,7 @@ func (s *authService) Refresh(ctx context.Context, oldToken string) (string, str
 	}
 
 	// 3. If no user ID found, the refresh token is invalid
-	if userID == 0 {
+	if userID == uuid.Nil {
 		return "", "", ErrInvalidRefreshToken
 	}
 

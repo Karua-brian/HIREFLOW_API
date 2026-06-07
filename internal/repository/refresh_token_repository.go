@@ -1,4 +1,4 @@
-package repository  
+package repository
 
 import (
 	"context"
@@ -8,12 +8,14 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // RefreshTokenStore defines how the service interacts with persistance for refresh tokens
 type RefreshTokenRepository interface {
-	SaveToken(ctx context.Context, userID int64, token string, expires time.Time) error
-	GetUserIDByToken(ctx context.Context, token string) (int64, error)
+	SaveToken(ctx context.Context, userID uuid.UUID, token string, expires time.Time) error
+	GetUserIDByToken(ctx context.Context, token string) (uuid.UUID, error)
 	DeleteToken(ctx context.Context, token string) error
 	DeleteExpired(ctx context.Context) error
 }
@@ -28,7 +30,7 @@ func NewPostgresRefreshTokenRepo(db *sql.DB) *PostgresRefreshTokenStore {
 	return &PostgresRefreshTokenStore{db: db}
 }
 
-func (s *PostgresRefreshTokenStore) SaveToken(ctx context.Context, userID int64, token string, expires time.Time) error {
+func (s *PostgresRefreshTokenStore) SaveToken(ctx context.Context, userID uuid.UUID, token string, expires time.Time) error {
 
 	token = strings.TrimSpace(token)
 
@@ -54,7 +56,7 @@ func (s *PostgresRefreshTokenStore) SaveToken(ctx context.Context, userID int64,
 	return err
 }
 
-func (s *PostgresRefreshTokenStore) GetUserIDByToken(ctx context.Context, token string) (int64, error) {
+func (s *PostgresRefreshTokenStore) GetUserIDByToken(ctx context.Context, token string) (uuid.UUID, error) {
 
 	token = strings.TrimSpace(token)
 
@@ -69,7 +71,8 @@ func (s *PostgresRefreshTokenStore) GetUserIDByToken(ctx context.Context, token 
 	`
 
 	// Scan the result into a userID variable
-	var userID int64
+	var userID uuid.UUID
+
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
@@ -78,10 +81,11 @@ func (s *PostgresRefreshTokenStore) GetUserIDByToken(ctx context.Context, token 
 
 	if err!= nil {
 		if err == sql.ErrNoRows {
-			return 0, ErrInvalidRefreshToken // No user found for the token
+			return uuid.Nil, ErrInvalidRefreshToken // No user found for the token
 		}
-		return 0, err // Some other database error occurred
+		return uuid.Nil, err // Some other database error occurred
 	}
+
 	log.Println("Incoming Token:", token)
 	log.Println("Incoming Hash:", tokenHash)
 	return userID, nil

@@ -8,6 +8,8 @@ import (
 	"job_board/internal/repository"
 	"sync"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 // mockJobStore implemnts store.JobStore for testing purposes
@@ -24,7 +26,7 @@ type mockWorker struct {
 
 type mockApplicationRepository struct {
 	createFunc func(ctx context.Context, app *domain.Application) error
-	existsFunc func(ctx context.Context, jobID, userID int64) (bool, error)
+	existsFunc func(ctx context.Context, jobID, userID uuid.UUID) (bool, error)
 }
 
 // CreateTx implements [store.ApplicationStore].
@@ -33,7 +35,7 @@ func (m *mockApplicationRepository) Create(ctx context.Context, app *domain.Appl
 	return m.createFunc(ctx, app)
 }
 
-func (m *mockApplicationRepository) Exists(ctx context.Context, jobID, userID int64) (bool, error) {
+func (m *mockApplicationRepository) Exists(ctx context.Context, jobID, userID uuid.UUID) (bool, error) {
 	return m.existsFunc(ctx, jobID, userID)
 }
 
@@ -88,9 +90,12 @@ func TestCreateJob_Forbidden(t *testing.T) {
 	// Create the service
 	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
+	userIDStr := "2"
+
+	userID, err := uuid.Parse(userIDStr)
 	// Context with a user who is not recruiter/admin
 	ctx := contextkeys.WithUser(context.Background(), &domain.User{
-		ID:   2,
+		ID:   userID,
 		Role: "applicant", // not allowed
 	})
 
@@ -101,7 +106,7 @@ func TestCreateJob_Forbidden(t *testing.T) {
 	}
 
 	// Call CreateJob
-	err := svc.CreateJob(ctx, job)
+	err = svc.CreateJob(ctx, job)
 
 	// Expected ErrUnauthorized
 	if !errors.Is(err, ErrForbidden) {
@@ -117,20 +122,16 @@ func TestCreateJob_Success(t *testing.T) {
 	mockStore := &mockJobRepository{
 		createFunc: func(ctx context.Context, job *domain.Job) error {
 			called = true
-
-			// Ensure createdBy is set
-			if job.CreatedBy != 1 {
-				t.Fatalf("expected createdBy=1, got %d", job.CreatedBy)
-			}
 			return nil
 		},
 	}
 
 	svc := NewJobService(mockStore, &mockApplicationRepository{}, &mockWorker{},)
 
+	userID, _ := uuid.Parse("1")
 	// Context with recruiter/admin user
 	ctx := contextkeys.WithUser(context.Background(), &domain.User{
-		ID:   1,
+		ID:   userID,
 		Role: "recruiter",
 	})
 
@@ -155,7 +156,7 @@ func TestApplyToJob_Concurrent(t *testing.T) {
 	created := false
 
 	mockAppStore := &mockApplicationRepository{
-		existsFunc: func(ctx context.Context, jobID, userID int64) (bool, error) {
+		existsFunc: func(ctx context.Context, jobID, userID uuid.UUID) (bool, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			return created, nil
@@ -178,12 +179,14 @@ func TestApplyToJob_Concurrent(t *testing.T) {
 
 	svc := NewJobService(&mockJobRepository{}, mockAppStore, worker,)
 
+	userID, _ := uuid.Parse("2")
+
 	ctx := contextkeys.WithUser(context.Background(), &domain.User{
-		ID:   1,
+		ID:   userID,
 		Role: "applicant",
 	})
 
-	jobID := int64(1)
+	jobID, _ := uuid.Parse("1")
 
 	var wg sync.WaitGroup
 	attempts := 20

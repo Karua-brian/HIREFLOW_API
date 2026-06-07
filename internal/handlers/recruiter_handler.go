@@ -10,6 +10,7 @@ import (
 	"job_board/pkg/response"
 	"net/http"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -174,10 +175,10 @@ func (h *recruiterHandler) UpdateRecruiterRequestStatus(w http.ResponseWriter, r
 	}
 
 	// Basic validation (transport-level validation)
-	if req.ID <= 0 {
+	if req.ID == uuid.Nil {
 		response.Error(w, http.StatusBadRequest, "invalid recruiter request ID", response.ValidationError{
 			Field: "id",
-			Error: "ID must be a positive integer",
+			Error: "ID must be a valid UUID",
 		})
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // Load JWT secret from env variables
@@ -17,11 +18,11 @@ var jwtSecret = []byte(secret)
 
 // GenerateJWT creates a JWT token with user ID and role as claims, 
 // signed with the secret key.
-func GenerateJWT(userID int64, role string) (string, error) {
+func GenerateJWT(userID uuid.UUID, role string) (string, error) {
 	
 	//	Define token claims
 	claims := jwt.MapClaims{
-		"user_id": userID,
+		"user_id": userID.String(),
 		"role"   : role,
 		"exp"    : time.Now().Add(15 * time.Minute).Unix(), // Token expires in 15 minutes
 	}

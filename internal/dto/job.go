@@ -1,6 +1,6 @@
 package dto
 
-import ()
+import "github.com/google/uuid"
 
 type CreateJobRequest struct {
 	Title       string `json:"title"`
@@ -18,7 +18,7 @@ type ListJobsResponse struct {
 }
 
 type JobSummary struct {
-	ID          int64    `json:"id"`
+	ID          uuid.UUID    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Company     string `json:"company"`

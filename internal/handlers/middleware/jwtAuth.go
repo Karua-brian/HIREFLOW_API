@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // JWTAuth is a middleware that checks for a valid JWT token in the Authorization header.
@@ -49,21 +50,28 @@ func JWTAuth(next http.Handler) http.Handler {
 		// Extract user info from token claims and add it to the request context
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+			response.Error(w, http.StatusUnauthorized, "Invalid token claims")
 			return 
 		}
 
-		userIDFloat, ok1 := claims["user_id"].(float64)
+		userIDStr, ok1 := claims["user_id"].(string)
 		role, ok2 := claims["role"].(string)
 
 		if !ok1 || !ok2 {
-			http.Error(w, "Invalid token payload", http.StatusUnauthorized)
+			response.Error(w, http.StatusUnauthorized, "Invalid token payload")
 			return 
+		}
+
+		userID, err := uuid.Parse(userIDStr)
+
+		if err != nil {
+			response.Error(w, http.StatusUnauthorized, "invalid token")
+			return
 		}
 
 		// Inject user into context
 		user := &domain.User{
-			ID: int64(userIDFloat),
+			ID: userID,
 			Role: role,
 		}
 

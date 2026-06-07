@@ -3,6 +3,8 @@ package validator
 import (
 	"errors"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 // ValidateRegister performs basic validation on the registration input fields.
@@ -79,8 +81,8 @@ func ValidateListJobs(limit, offset int) error {
 	return nil
 }
 
-func ValidateApplyJob(jobID int64) error {
-	if jobID <= 0 {
+func ValidateApplyJob(jobID uuid.UUID) error {
+	if jobID == uuid.Nil {
 		return errors.New("invalid job ID")
 	}
 

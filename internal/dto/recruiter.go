@@ -1,5 +1,7 @@
 package dto
 
+import "github.com/google/uuid"
+
 type CreateRecruiterRequest struct {
 	CompanyName 	string `json:"company_name"`
 	CompanyWebsite  string `json:"company_website"`
@@ -7,7 +9,7 @@ type CreateRecruiterRequest struct {
 }
 
 type RecruiterResponse struct {
-	ID 			int64 `json:"id"`
+	ID 			uuid.UUID `json:"id"`
 	Status 		string `json:"status"`
 	Message 	string `json:"message"`
 }
@@ -20,8 +22,8 @@ type ListRecruiterRequestsResponse struct {
 }
 
 type RecruiterRequestSummary struct {
-	ID 				int64 `json:"id"`
-	UserID 			int64 `json:"user_id"`
+	ID 				uuid.UUID `json:"id"`
+	UserID 			uuid.UUID `json:"user_id"`
 	CompanyName 	string `json:"company_name"`
 	CompanyWebsite  string `json:"company_website"`
 	Message 		string `json:"message"`
@@ -29,7 +31,7 @@ type RecruiterRequestSummary struct {
 }
 
 type UpdateRecruiterRequestStatusRequest struct {
-	ID int64 `json:"id"`
+	ID uuid.UUID `json:"id"`
 	Status string `json:"status"` // "approved" or "rejected"
 }
 

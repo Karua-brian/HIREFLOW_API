@@ -8,11 +8,13 @@ import (
 	"job_board/internal/validator"
 	"job_board/pkg/response"
 	"net/http"
-	"strconv"
+
+	"github.com/google/uuid"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
+
 type JobHandler interface {
 	CreateJob(w http.ResponseWriter, r *http.Request)
 	ListJobs(w http.ResponseWriter, r *http.Request)
@@ -23,17 +25,16 @@ type JobHandler interface {
 // JobHandler holds dependencies for job related HTTP handlers.
 type jobHandler struct {
 	service service.JobService
-	logger *zap.Logger
+	logger  *zap.Logger
 }
 
 // Constructor - dependency injection
 func NewJobHandlers(s service.JobService, logger *zap.Logger) JobHandler {
 	return &jobHandler{
 		service: s,
-		logger: logger,
+		logger:  logger,
 	}
 }
-
 
 // CreateJob handles POST /jobs
 func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +42,7 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	// Decode request body into domain.Job
 	// We only accept Title, Description, Company from client
 	var req dto.CreateJobRequest
-	
+
 	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -56,7 +57,6 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.logger.Info("Received request to create job with body:", zap.Any("request_body", req))
-	
 
 	// Create domain job object
 	job := &domain.Job{
@@ -80,8 +80,8 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Success response
-	h.logger.Info("Job created successfully with ID", zap.Int64("job_id", job.ID))
-	response.JSON(w, http.StatusOK, job)	
+	h.logger.Info("Job created successfully with ID", zap.Any("job_id", job.ID))
+	response.JSON(w, http.StatusOK, job)
 }
 
 // ListJobs handles GET /jobs
@@ -91,11 +91,10 @@ func (h *jobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
-	
 	// Basic validation (transport-level validation)
 	limit, offset, err := validator.ParsePaginationParams(limitStr, offsetStr)
-		if err != nil {
-			response.Error(w, http.StatusBadRequest, "invalid pagination parameters", response.ValidationError{
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid pagination parameters", response.ValidationError{
 			Field: "limit/offset",
 			Error: err.Error(),
 		})
@@ -143,7 +142,7 @@ func (h *jobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 
 	// Extract job ID from URL path
 	jobIDStr := chi.URLParam(r, "id")
-	jobID, err := strconv.ParseInt(jobIDStr, 10, 64)
+	jobID, err := uuid.Parse(jobIDStr)
 
 	if err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid job id")
@@ -158,7 +157,7 @@ func (h *jobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	h.logger.Info("Received request to apply to Job ID", zap.Int64("job_id", jobID))
+	h.logger.Info("Received request to apply to Job ID", zap.Any("job_id", jobID))
 
 	// Call service layer to apply to the job
 	err = h.service.ApplyToJob(r.Context(), jobID)
@@ -166,29 +165,29 @@ func (h *jobHandler) ApplyToJob(w http.ResponseWriter, r *http.Request) {
 		// Log the status before returning
 		if errors.Is(err, service.ErrAlreadyApplied) {
 			h.mapError(w, err) // Map to 409 Conflict
-			h.logger.Info("User has already applied to Job ID:", zap.Int64("job_id", jobID))
+			h.logger.Info("User has already applied to Job ID:", zap.Any("job_id", jobID))
 			return
 		} else if errors.Is(err, service.ErrInvalidRole) {
 			h.mapError(w, err) // Map to 403 Forbidden
-			h.logger.Info("User with invalid role attempted to apply to Job ID", zap.Int64("job_id", jobID))
+			h.logger.Info("User with invalid role attempted to apply to Job ID", zap.Any("job_id", jobID))
 			return
 		} else if errors.Is(err, service.ErrUnauthorized) {
 			h.mapError(w, err) // Map to 401 Unauthorized
-			h.logger.Info("Unauthorized user attempted to apply to Job ID", zap.Int64("job_id", jobID))
+			h.logger.Info("Unauthorized user attempted to apply to Job ID", zap.Any("job_id", jobID))
 			return
 		} else if errors.Is(err, service.ErrForbidden) {
 			h.mapError(w, err) // Map to 403 Forbidden
-			h.logger.Info("Forbidden action: user attempted to apply to Job ID", zap.Int64("job_id", jobID))
+			h.logger.Info("Forbidden action: user attempted to apply to Job ID", zap.Any("job_id", jobID))
 			return
-		 }
+		}
 
-		h.logger.Info("Failed to apply to Job ID:", zap.Int64("job_id", jobID), zap.Error(err))
+		h.logger.Info("Failed to apply to Job ID:", zap.Any("job_id", jobID), zap.Error(err))
 		response.Error(w, http.StatusInternalServerError, "failed to apply to job")
 		return
 	}
 
 	// Succes response
-	h.logger.Info("Job successfully applied to by the current user", zap.Int64("job_id", jobID))
+	h.logger.Info("Job successfully applied to by the current user", zap.Any("job_id", jobID))
 	response.JSON(w, http.StatusCreated, map[string]string{
 		"message": "application successful",
 	})
@@ -200,5 +199,3 @@ func (h *jobHandler) Health(w http.ResponseWriter, r *http.Request) {
 		"status": "ok",
 	})
 }
-
-

@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"job_board/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 type RecruiterRequestRepository interface {
@@ -11,13 +13,13 @@ type RecruiterRequestRepository interface {
 	CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error
 
 	// GetRecruiterRequestByID retrieves a recruiter request by its ID
-	GetRecruiterRequestByUserID(ctx context.Context, id int64) (*domain.RecruiterRequest, error)
+	GetRecruiterRequestByUserID(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error)
 
 	// ListRecruiterRequests retrieves all recruiter requests with pagination
 	ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error)
 
 	// UpdateRecruiterRequestStatus updates the status of a recruiter request
-	UpdateRecruiterRequestStatus(ctx context.Context, id int64, status string) error
+	UpdateRecruiterRequestStatus(ctx context.Context, recruiterID uuid.UUID, status string) error
 }
 
 type PostgresRecruiterRequestRepository struct {
@@ -52,7 +54,7 @@ func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.
 	return nil
 }
 
-func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, userID int64) (*domain.RecruiterRequest, error) {
+func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error) {
 	query := `
 	SELECT id, recruiter_id, company_name, company_website, message, status, created_at
 	FROM recruiter_requests
@@ -60,7 +62,7 @@ func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx con
 	`
 
 	var req domain.RecruiterRequest
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+	err := r.db.QueryRowContext(ctx, query, recruiterID).Scan(
 		&req.ID,
 		&req.RecruiterID,
 		&req.CompanyName,
@@ -126,13 +128,13 @@ func (r *PostgresRecruiterRequestRepository) ListRecruiterRequests(ctx context.C
 	return requests, total, nil
 }
 
-func (r *PostgresRecruiterRequestRepository) UpdateRecruiterRequestStatus(ctx context.Context, id int64, status string) error {
+func (r *PostgresRecruiterRequestRepository) UpdateRecruiterRequestStatus(ctx context.Context, recruiterID uuid.UUID, status string) error {
 	query := `
 	UPDATE recruiter_requests
 	SET status = $1
 	WHERE id = $2
 	`
 
-	_, err := r.db.ExecContext(ctx, query, status, id)
+	_, err := r.db.ExecContext(ctx, query, status, recruiterID)
 	return err
 }

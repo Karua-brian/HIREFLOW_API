@@ -6,6 +6,7 @@ import (
 	"job_board/internal/domain"
 	"job_board/internal/repository"
 
+	"github.com/google/uuid"
 )
 
 // Service depends on an interface from store
@@ -20,7 +21,7 @@ type JobService interface {
 	ListJobs(ctx context.Context, limit, offset int) ([]domain.Job, int64, error)
 
 	// ApplyToJob returns jobs applied 
-	ApplyToJob(ctx context.Context, jobId int64) error
+	ApplyToJob(ctx context.Context, jobId uuid.UUID) error
 }
 
 
@@ -60,12 +61,6 @@ func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
 		return ErrForbidden
 	}
 
-	
-
-	// Enforce Ownership:
-	// The job must belong to the authenticated user
-	job.CreatedBy = user.ID
-
 	// Call store to persist
 	return s.jobRepository.Create(ctx, job)
 }
@@ -97,7 +92,7 @@ func (s *jobService) ListJobs(ctx context.Context, limit, offset int) ([]domain.
 	return jobs, total, nil
 }
 
-func (s *jobService) ApplyToJob(ctx context.Context, jobID int64) error {
+func (s *jobService) ApplyToJob(ctx context.Context, jobID uuid.UUID) error {
 	return s.appRepository.CreateTx(ctx, func(txRepository repository.ApplicationTxRepository) error {
 
 	user, ok := contextkeys.UserFromContext(ctx)

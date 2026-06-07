@@ -2,16 +2,17 @@ package repository
 
 import (
 	"context"
-	"job_board/internal/domain"
 	"database/sql"
-	"errors"
+	"job_board/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 // UserStore defines how the service interacts with persistance for user data
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User) error
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
-	GetUserByID(ctx context.Context, id int64) (*domain.User, error)
+	GetUserByID(ctx context.Context, userID uuid.UUID) (*domain.User, error)
 }
 
 type PostgresUserRepository struct {
@@ -26,78 +27,84 @@ func NewPostgresUserRepo(db *sql.DB) *PostgresUserRepository {
 func (s *PostgresUserRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	// Query the new user into the database
 	query := `
-	INSERT INTO users (email, password, role)
+	INSERT INTO users (email, password_hash, role)
 	VALUES ($1, $2, $3)
 	RETURNING id, created_at, updated_at
 	`
 	// Execute the query and scan the generated ID back into the user struct
-	return s.db.QueryRowContext(
+	err := s.db.QueryRowContext(
 		ctx,
 		query,
 		user.Email,
 		user.Password,
 		user.Role,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt) // Get the generated ID and set it on the user struct
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *PostgresUserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	// Query the database for a user with the given email
-	row := s.db.QueryRowContext( 
-		ctx, 
-		`SELECT id, email, password, role
+	query := `
+		SELECT id, email, password, role, created_at, updated_at
 		FROM users
-		WHERE email = $1`,
-		email,
-	)
-	// Scan the result into a User struct
-	user := &domain.User{}
+		WHERE email = $1
+		`
 
-	// Handle the case where no user is found
-	err := row.Scan(
+	user :=  &domain.User{}
+
+	err := s.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Email,
 		&user.Password,
 		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
-	// If no user is found, return nil without an error 
+	// If no user is found, return nil without an error
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// GetUserByID retrieves a user by their ID
+func (s *PostgresUserRepository) GetUserByID(ctx context.Context, userID uuid.UUID) (*domain.User, error) {
+
+	// Query the database for a user with the given ID
+	query := `
+	SELECT id, created_at, updated_at
+	FROM users
+	WHERE id = $1
+	`
+	row := s.db.QueryRowContext(ctx, query, userID)
+
+	// Scan the result into a User struct
+	user := &domain.User{}
+
+	err := row.Scan(
+		&userID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	// If no user is found, return nil without an error
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
-
-	// Return the found user.Email
-	return user, nil
-}	
-
-// GetUserByID retrieves a user by their ID
-func (s *PostgresUserRepository) GetUserByID(ctx context.Context, id int64) (*domain.User, error) {
-
-	// Query the database for a user with the given ID
-	query := `
-	SELECT id, email, password, role
-	FROM users
-	WHERE id = $1
-	`
-	row := s.db.QueryRowContext(ctx, query, id)
-
-	// Scan the result into a User struct
-	user := &domain.User{}
-	err := row.Scan(
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.Role,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New("user not found")
-		}
-		return nil, err
-	}
-
-	// Return the he found userID
+	
 	return user, nil
 }
+
+

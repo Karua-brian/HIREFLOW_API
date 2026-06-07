@@ -2,10 +2,12 @@ package repository
 
 import (
 	"context"
-	"job_board/internal/domain"
 	"database/sql"
-	"github.com/jackc/pgconn"
 	"errors"
+	"job_board/internal/domain"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgconn"
 )
 
 type ApplicationRepository interface {
@@ -14,7 +16,7 @@ type ApplicationRepository interface {
 	Create(ctx context.Context, app *domain.Application) error
 
 	// Exists checks if user already applied
-	Exists(ctx context.Context, jobID, userID int64) (bool, error)
+	Exists(ctx context.Context, jobID, userID uuid.UUID) (bool, error)
 
 	// Inserts a trasactional new applicaation for a job
 	CreateTx(ctx context.Context, fn func(ApplicationTxRepository) error) error
@@ -55,7 +57,7 @@ func (s *PostgresApplicationStore) Create(ctx context.Context, app *domain.Appli
 	return err
 }
 
-func (s *PostgresApplicationStore) Exists(ctx context.Context, jobID, userID int64) (bool, error) {
+func (s *PostgresApplicationStore) Exists(ctx context.Context, jobID, userID uuid.UUID) (bool, error) {
 
 	query := `
 	SELECT 1

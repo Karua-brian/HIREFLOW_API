@@ -44,7 +44,6 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 		job.Title,
 		job.Description,
 		job.Company,
-		job.CreatedBy,
 		job.Location,
 		job.Salary,
 	).Scan(&job.ID, &job.CreatedAt)
@@ -89,7 +88,6 @@ func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]
 			&job.Location,
 			&job.Salary,
 			&job.CreatedAt,
-			&job.CreatedBy,
 		); err != nil {
 			return nil, 0, err
 		}

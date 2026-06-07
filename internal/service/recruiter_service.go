@@ -5,6 +5,8 @@ import (
 	"job_board/internal/contextkeys"
 	"job_board/internal/domain"
 	"job_board/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type RecruiterService interface {
@@ -14,9 +16,9 @@ type RecruiterService interface {
 	// ListRecruiterRequests allows admins to view pending recruiter requests.
 	ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error)
 
-	UpdateRecruiterRequestStatus(ctx context.Context, id int64, status string) error
+	UpdateRecruiterRequestStatus(ctx context.Context, recruiterID uuid.UUID, status string) error
 
-	GetMyRecruiterRequest(ctx context.Context, id int64) (*domain.RecruiterRequest, error)
+	GetMyRecruiterRequest(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error)
 }
 
 
@@ -45,8 +47,8 @@ func (s *recruiterService) RequestRecruiterAccess(ctx context.Context, req *doma
 	return s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
 }
 
-func (s *recruiterService) GetMyRecruiterRequest(ctx context.Context, userID int64) (*domain.RecruiterRequest, error) {
-	request, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, userID)
+func (s *recruiterService) GetMyRecruiterRequest(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error) {
+	request, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, recruiterID)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			return nil, ErrRecruiterRequestNotFound
@@ -73,7 +75,7 @@ func (s *recruiterService) ListRecruiterRequests(ctx context.Context, limit, off
 	return s.recruiterRequestRepo.ListRecruiterRequests(ctx, limit, offset)
 }
 
-func (s *recruiterService) UpdateRecruiterRequestStatus(ctx context.Context, id int64, status string) error {
+func (s *recruiterService) UpdateRecruiterRequestStatus(ctx context.Context, recruiterID uuid.UUID, status string) error {
 
 	// Validate status input
 	if status != "approved" && status != "rejected" {
@@ -81,7 +83,7 @@ func (s *recruiterService) UpdateRecruiterRequestStatus(ctx context.Context, id 
 	}
 
 	// Check if request exists
-	req, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, id)
+	req, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, recruiterID)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			return repository.ErrNotFound
@@ -93,5 +95,5 @@ func (s *recruiterService) UpdateRecruiterRequestStatus(ctx context.Context, id 
 		return repository.ErrNotFound
 	}
 
-	return s.recruiterRequestRepo.UpdateRecruiterRequestStatus(ctx, id, status)
+	return s.recruiterRequestRepo.UpdateRecruiterRequestStatus(ctx, recruiterID, status)
 }
