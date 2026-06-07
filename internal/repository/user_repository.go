@@ -50,7 +50,7 @@ func (s *PostgresUserRepository) CreateUser(ctx context.Context, user *domain.Us
 func (s *PostgresUserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	// Query the database for a user with the given email
 	query := `
-		SELECT id, email, password, role, created_at, updated_at
+		SELECT id, email, password_hash, role, created_at, updated_at
 		FROM users
 		WHERE email = $1
 		`
