@@ -92,7 +92,7 @@ func (s *PostgresUserRepository) GetUserByID(ctx context.Context, userID uuid.UU
 	user := &domain.User{}
 
 	err := row.Scan(
-		&userID,
+		&user.ID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
