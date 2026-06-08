@@ -40,9 +40,10 @@ func InitDB(cfg *config.Config, logger *zap.Logger) *sql.DB {
 		logger.Fatal("DB ping failed after retries:", zap.Error(err))
 	}
 
-	// Run database migrations to ensure schema is up to date:
+	/* Run database migrations to ensure schema is up to date:
 	db.RunMigrations(dbConn, logger)
-
+	*/
+	
 	// Log the database name from env vars for verification:
 	dbName := os.Getenv("DB_NAME")
 	logger.Info("Env database name:", zap.String("db_name", dbName))
