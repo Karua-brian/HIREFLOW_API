@@ -43,8 +43,6 @@ services:
     container_name: hireflow_api
 
     depends_on:
-      migrate:
-        condition: service_healthy
       db:
         condition: service_healthy 
 
