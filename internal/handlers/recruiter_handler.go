@@ -21,7 +21,7 @@ type RecruiterHandler interface {
 
 	UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request)
 
-	GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
+		GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
 }
 
 type recruiterHandler struct {
@@ -63,7 +63,7 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 	userID := user.ID
 	// Create domain object for service layer
 	request := &domain.RecruiterRequest{
-		RecruiterID:    userID,
+		RecruiterID:		    userID,
 		CompanyName:    req.CompanyName,
 		CompanyWebsite: req.CompanyWebsite,
 		Message:        req.Message,
@@ -148,7 +148,7 @@ func (h *recruiterHandler) ListRecruiterRequests(w http.ResponseWriter, r *http.
 	for i, req := range requests {
 		resp.Requests[i] = dto.RecruiterRequestSummary{
 			ID:             req.ID,
-			UserID:         req.RecruiterID,
+			RecruiterID:    req.RecruiterID,
 			CompanyName:    req.CompanyName,
 			CompanyWebsite: req.CompanyWebsite,
 			Message:        req.Message,

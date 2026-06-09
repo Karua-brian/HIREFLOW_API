@@ -23,7 +23,7 @@ type ListRecruiterRequestsResponse struct {
 
 type RecruiterRequestSummary struct {
 	ID 				uuid.UUID `json:"id"`
-	UserID 			uuid.UUID `json:"user_id"`
+	RecruiterID 			uuid.UUID `json:"user_id"`
 	CompanyName 	string `json:"company_name"`
 	CompanyWebsite  string `json:"company_website"`
 	Message 		string `json:"message"`

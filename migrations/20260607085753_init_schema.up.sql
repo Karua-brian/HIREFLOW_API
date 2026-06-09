@@ -11,7 +11,7 @@ CREATE TABLE users (
 
 CREATE TABLE recruiter_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recruiter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     company_name TEXT NOT NULL,
     company_website TEXT,
     message TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE recruiter_requests (
 
 CREATE TABLE jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    recruiter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recruiter_id UUID NOT NULL REFERENCES recruiter_requests(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     location TEXT,

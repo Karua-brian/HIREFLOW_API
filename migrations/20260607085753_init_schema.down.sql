@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS applications;
 DROP TABLE IF EXISTS jobs;
 DROP TABLE IF EXISTS recruiter_requests;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS admin_controls;
+DROP TABLE IF EXISTS admin_actions;
 DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS users;
 DROP EXTENSION IF EXISTS "pgcrypto";
