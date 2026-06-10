@@ -69,7 +69,7 @@ func (s *PostgresUserRepository) GetUserByEmail(ctx context.Context, email strin
 	// If no user is found, return nil without an error
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return nil, nil
 		}
 		return nil, err
 	}

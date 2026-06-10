@@ -14,4 +14,5 @@ type RecruiterRequest struct {
 	Message 		string
 	Status 			string // "pending", "approved", "rejected"
 	CreatedAt 		time.Time
+	UpdatedAt		time.Time
 }

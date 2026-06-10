@@ -39,7 +39,7 @@ func JWTAuth(next http.Handler) http.Handler {
 
 		// Parse and validate the token
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
-			return jwtSecret, nil
+			return getJWTSecret(), nil
 		})
 
 		if err != nil || !token.Valid{

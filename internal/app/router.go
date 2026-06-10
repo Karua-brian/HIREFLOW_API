@@ -10,7 +10,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler, recruiterHandler handlers.RecruiterHandler) http.Handler {
+func NewRouter(
+		jobHandler handlers.JobHandler, 
+		authHandler handlers.AuthHandler, 
+		recruiterHandler handlers.RecruiterHandler,
+		adminHandler handlers.AdminHandler,
+	) http.Handler {
+
 	r := chi.NewRouter()
 
 	// Set up logging middleware with slog
@@ -34,6 +40,7 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler,
 		// Apply authentication middleware to all routes in this group
 		r.Use(middleware.RequestID)
 		r.Use(middleware.JWTAuth)
+		r.Use(middleware.AdminOnly)
 
 		// Job routes - only authenticated users can create jobs
 		r.Post("/jobs", jobHandler.CreateJob)
@@ -45,10 +52,10 @@ func NewRouter(jobHandler handlers.JobHandler, authHandler handlers.AuthHandler,
 		r.Post("/recruiter/requests", recruiterHandler.RequestRecruiterAccess)
 		r.Get("/recruiter/requests/me", recruiterHandler.GetMyRecruiterRequest) // Endpoint for users to check their recruiter request status
 
-		/* Admin routes for managing recruiter requests
-		r.Get("/admin/recruiter-requests", recruiterHandler.ListRecruiterRequests)
-		r.Put("/admin/recruiter-requests/{id}", recruiterHandler.UpdateRecruiterRequestStatus)
-		*/
+		// Admin routes for managing recruiter requests
+		r.Get("/admin/recruiter-requests", adminHandler.ListRecruiterRequests)
+		r.Put("/admin/recruiter-requests/{id}", adminHandler.UpdateRecruiterRequestStatus)
+		
 	})
 
 	return r

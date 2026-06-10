@@ -5,10 +5,13 @@ services:
     container_name: hireflow_db
     restart: unless-stopped
 
+    env_file:
+      - .env
+
     environment:
-      POSTGRES_USER: karuabrian
-      POSTGRES_PASSWORD: Karuabrian.2002
-      POSTGRES_DB: job_board
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
 
     ports:
       - "5432:5432"
@@ -17,38 +20,19 @@ services:
       - postgres_data:/var/lib/postgresql/data  
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U karuabrian -d job_board -h localhost -p 5432"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -h localhost -p 5432"]
       interval: 1m30s
       timeout: 30s
       retries: 5
       start_period: 30s
 
-  api: 
-    build: .
-    container_name: hireflow_api
-
-    depends_on:
-      db:
-        condition: service_healthy 
-
-    environment:
-      - DB_USER=karuabrian
-      - DB_PASSWORD=Karuabrian.2002
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=job_board
-      - DB_DSN=postgres://karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable
-      - JWT_SECRET=SUPER_SECRET_KEY
-      - PORT=8080
-
-    ports:
-      - "8080:8080"    
-
-    restart: unless-stopped
-
   migrate:
     image: migrate/migrate
     container_name: hireflow_migrate
+
+    env_file:
+      - .env
+
     depends_on:
       db:
         condition: service_healthy
@@ -57,11 +41,51 @@ services:
     command:
       [
         "-path", "/migrations",
-        "-database",
-        "postgres://karuabrian:Karuabrian.2002@db:5432/job_board?sslmode=disable",
+        "-database", "${DB-DSN}",
         "up"
       ]      
     restart: "no"  
+
+  seed:
+    build: .
+    container_name: hireflow_seed
+
+    env_file:
+      - .env
+
+    command: ["./hireflow_seed"]
+
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+    environment:
+      - DB_DSN=${DB_DSN}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+
+    restart: "no"      
+
+  api: 
+    build: .
+    container_name: hireflow_api
+
+    env_file:
+      - .env
+
+    depends_on:
+      seed:
+        condition: service_completed_successfully 
+    
+    environment:
+      DB_DSN: ${DB_DSN}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT}
+
+    ports:
+      - "8080:8080"    
+
+    restart: "unless-stopped"
       
 volumes:
     postgres_data:
