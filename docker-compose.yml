@@ -41,7 +41,7 @@ services:
     command:
       [
         "-path", "/migrations",
-        "-database", "${DB-DSN}",
+        "-database", "${DB_DSN}",
         "up"
       ]      
     restart: "no"  
