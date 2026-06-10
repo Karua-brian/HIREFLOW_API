@@ -31,7 +31,9 @@ func (r *PostgresAdminRepository) ListRecruiterRequests(ctx context.Context, lim
 	query := `
 	SELECT 
 		id, 
-		recruiter_id, 
+		recruiter_id,
+		company_name,
+		company_website, 
 		status, 
 		created_at, 
 		updated_at
@@ -53,6 +55,8 @@ func (r *PostgresAdminRepository) ListRecruiterRequests(ctx context.Context, lim
 		if err := rows.Scan(
 			&req.ID,
 			&req.RecruiterID,
+			&req.CompanyName,
+			&req.CompanyWebsite,
 			&req.Status,
 			&req.CreatedAt,
 			&req.UpdatedAt,
