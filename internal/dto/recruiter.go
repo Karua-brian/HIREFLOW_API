@@ -9,9 +9,9 @@ type CreateRecruiterRequest struct {
 }
 
 type RecruiterResponse struct {
-	ID 			uuid.UUID `json:"id"`
-	Status 		string `json:"status"`
-	Message 	string `json:"message"`
+	ID 			uuid.UUID 	`json:"id"`
+	Status 		string 		`json:"status"`
+	Message 	string 		`json:"message"`
 }
 
 type ListRecruiterRequestsResponse struct {
@@ -22,16 +22,16 @@ type ListRecruiterRequestsResponse struct {
 }
 
 type RecruiterRequestSummary struct {
-	ID 				uuid.UUID `json:"id"`
-	RecruiterID 			uuid.UUID `json:"user_id"`
-	CompanyName 	string `json:"company_name"`
-	CompanyWebsite  string `json:"company_website"`
-	Message 		string `json:"message"`
-	Status 			string `json:"status"`
+	ID 				uuid.UUID	`json:"id"`
+	RecruiterID 	uuid.UUID	`json:"recruiter_id"`
+	CompanyName 	string 		`json:"company_name"`
+	CompanyWebsite  string 		`json:"company_website"`
+	Message 		string 		`json:"message"`
+	Status 			string 		`json:"status"`
 }
 
 type UpdateRecruiterRequestStatusRequest struct {
-	ID uuid.UUID `json:"id"`
-	Status string `json:"status"` // "approved" or "rejected"
+	ID 			uuid.UUID 		`json:"id"`
+	Status 		string 			`json:"status"` // "approved" or "rejected"
 }
 
