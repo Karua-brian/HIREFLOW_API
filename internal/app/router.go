@@ -40,7 +40,6 @@ func NewRouter(
 		// Apply authentication middleware to all routes in this group
 		r.Use(middleware.RequestID)
 		r.Use(middleware.JWTAuth)
-		r.Use(middleware.AdminOnly)
 
 		// Job routes - only authenticated users can create jobs
 		r.Post("/jobs", jobHandler.CreateJob)
@@ -51,7 +50,14 @@ func NewRouter(
 		// Recruiter access request route - only authenticated users can request recruiter access
 		r.Post("/recruiter/requests", recruiterHandler.RequestRecruiterAccess)
 		r.Get("/recruiter/requests/me", recruiterHandler.GetMyRecruiterRequest) // Endpoint for users to check their recruiter request status
-
+	})
+	
+	// Protected routes (require authentication)
+	r.Group(func(r chi.Router) {
+		// Apply authentication middleware to all routes in this group
+		r.Use(middleware.RequestID)
+		r.Use(middleware.JWTAuth)
+		r.Use(middleware.AdminOnly)	
 		// Admin routes for managing recruiter requests
 		r.Get("/admin/recruiter-requests", adminHandler.ListRecruiterRequests)
 		r.Put("/admin/recruiter-requests/{id}", adminHandler.UpdateRecruiterRequestStatus)
