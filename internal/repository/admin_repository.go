@@ -123,7 +123,7 @@ func (r *PostgresAdminRepository) ApproveRecruiterRequest(ctx context.Context, r
 	UPDATE recruiter_requests
 	SET status = 'approved',
 		updated_at = NOW()
-	WHERE request_id = $2
+	WHERE request_id = $1
 	`
 
 	result, err := r.db.ExecContext(ctx, query, requestID)
