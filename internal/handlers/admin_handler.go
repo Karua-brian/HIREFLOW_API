@@ -61,7 +61,7 @@ func (h *adminHandler) ListRecruiterRequests(w http.ResponseWriter, r *http.Requ
 	for i, req := range requests {
 		resp.Requests[i] = dto.RecruiterRequestSummary{
 			ID:          req.ID,
-			RequestID: 	 req.RequestID,
+			UserID: 	 req.UserID,
 			CompanyName: req.CompanyName,
 			Message:     req.Message,
 			Status:      req.Status,
@@ -124,4 +124,12 @@ func (h *adminHandler) RejectRecruiterRequest(w http.ResponseWriter, r *http.Req
 	}
 
 	err = h.adminService.RejectRecruiterRequest(r.Context(), req.Reason, requestID)
+	if err != nil {
+    response.Error(w, http.StatusInternalServerError, "failed to reject recruiter request")
+    return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]string{
+    "message": "recruiter request rejected successfully",
+	})
 }

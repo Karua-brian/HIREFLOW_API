@@ -14,16 +14,13 @@ type AdminRepository interface {
 	ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error)
 
 	// GetRecruiterRequestByID retrieves a recruiter request by its ID
-	GetRecruiterRequestByUserID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error)
+	GetRecruiterRequestByID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error)
 
 	//
 	ApproveRecruiterRequest(ctx context.Context, requestID uuid.UUID) error
 
 	//
 	RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error
-	
-	// UpdateUserRole updates the role of a user
-	UpdateUserRole(ctx context.Context, userID uuid.UUID, role string) error
 
 	// UpdateRecruiterRequestStatus updates the status of a recruiter request
 	// UpdateRecruiterRequestStatus(ctx context.Context, requestID uuid.UUID, status string) error
@@ -41,10 +38,11 @@ func (r *PostgresAdminRepository) ListRecruiterRequests(ctx context.Context, lim
 	query := `
 	SELECT 
 		id, 
-		request_id,
+		user_id,
 		company_name,
 		message,
-		status, 
+		status,
+		rejection_reason, 
 		created_at, 
 		updated_at
 	FROM recruiter_requests
@@ -64,10 +62,11 @@ func (r *PostgresAdminRepository) ListRecruiterRequests(ctx context.Context, lim
 		var req domain.RecruiterRequest
 		if err := rows.Scan(
 			&req.ID,
-			&req.RequestID,
+			&req.UserID,
 			&req.CompanyName,
 			&req.Message,
 			&req.Status,
+			&req.Reason,
 			&req.CreatedAt,
 			&req.UpdatedAt,
 		); err != nil {
@@ -90,26 +89,28 @@ func (r *PostgresAdminRepository) ListRecruiterRequests(ctx context.Context, lim
 	return requests, total, nil
 }
 
-func (r *PostgresAdminRepository) GetRecruiterRequestByUserID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error) {
+func (r *PostgresAdminRepository) GetRecruiterRequestByID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error) {
 	query := `
-	SELECT id, request_id, company_name, message, status, created_at
+	SELECT id, user_id, company_name, message, status, rejection_reason, created_at, updated_at
 	FROM recruiter_requests
-	WHERE request_id = $1
+	WHERE id = $1
 	`
 
 	var req domain.RecruiterRequest
 	err := r.db.QueryRowContext(ctx, query, requestID).Scan(
 		&req.ID,
-		&req.RequestID,
+		&req.UserID,
 		&req.CompanyName,
 		&req.Message,
 		&req.Status,
+		&req.Reason,
 		&req.CreatedAt,
+		&req.UpdatedAt,
 	)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Not found
+			return nil, ErrNotFound // Not found
 		}
 		return nil, err
 	}
@@ -119,17 +120,56 @@ func (r *PostgresAdminRepository) GetRecruiterRequestByUserID(ctx context.Contex
 
 func (r *PostgresAdminRepository) ApproveRecruiterRequest(ctx context.Context, requestID uuid.UUID) error {
 	
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	var userID uuid.UUID
+
+	err = tx.QueryRowContext(
+		ctx,
+		`
+		SELECT user_id
+		FROM recruiter_requests
+		WHERE id = $1
+		`,
+		requestID,
+	).Scan(&userID)
+
+	if err != nil {
+		return err
+	}
+
 	query := `
 	UPDATE recruiter_requests
 	SET status = 'approved',
 		updated_at = NOW()
-	WHERE request_id = $1
+	WHERE id = $1
 	`
 
 	result, err := r.db.ExecContext(ctx, query, requestID)
 	if err != nil {
 		return err
 	}
+
+	//
+	_, err = tx.ExecContext(
+        ctx,
+        `
+        UPDATE users
+        SET role='recruiter',
+            updated_at=NOW()
+        WHERE id = $1
+        `,
+        userID,
+    )
+
+    if err != nil {
+        return err
+    }
 
 	rows, err := result.RowsAffected()
 	if err != nil {
@@ -140,23 +180,24 @@ func (r *PostgresAdminRepository) ApproveRecruiterRequest(ctx context.Context, r
 		return ErrNotFound
 	}
 
-	return nil 
+	return tx.Commit() 
 } 
 
 func (r *PostgresAdminRepository) RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error {
 	
 	query := `
 	UPDATE recruiter_requests 
-	SET status = 'rejected'
+	SET status = 'rejected',
 		rejection_reason = $1,
 		updated_at = NOW()
-	WHERE request_id = $2
+	WHERE id = $2
 	`
 
 	result, err := r.db.ExecContext(ctx, query, reason, requestID)
 	if err != nil {
 		return err
 	}
+	
 
 	rows, err := result.RowsAffected()
 	if err != nil {
@@ -169,33 +210,7 @@ func (r *PostgresAdminRepository) RejectRecruiterRequest(ctx context.Context, re
 
 	return nil 
 }
-
-func (r *PostgresAdminRepository) UpdateUserRole(ctx context.Context, userID uuid.UUID, role string) error {
-
-	query :=
-	`
-		UPDATE users
-		SET role = 'recruiter',
-			updated_at = NOW()
-		WHERE id = $2	
-	`
-
-	result, err := r.db.ExecContext(ctx, query, role, userID)
-	if err != nil {
-		return err
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return nil
-	}
-
-	if rows == 0 {
-		return ErrNotFound
-	}
-
-	return nil
-} 
+ 
 
 // func (r *PostgresAdminRepository) UpdateRecruiterRequestStatus(ctx context.Context, requestID uuid.UUID, status string) error {
 // 	query := `

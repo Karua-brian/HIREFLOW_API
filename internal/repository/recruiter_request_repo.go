@@ -13,7 +13,7 @@ type RecruiterRequestRepository interface {
 	CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error
 
 	// GetRecruiterRequestByID retrieves a recruiter request by its ID
-	GetRecruiterRequestByUserID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error)
+	GetMyRecruiterRequestByUserID(ctx context.Context, userID uuid.UUID) (*domain.RecruiterRequest, error)
 
 }
 
@@ -27,21 +27,21 @@ func NewPostgresRecruiterRequestRepository(db *sql.DB) *PostgresRecruiterRequest
 
 func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error {
 	query := `
-	INSERT INTO recruiter_requests (request_id, company_name, company_website, message, status, rejection_reason)
+	INSERT INTO recruiter_requests (user_id, company_name, company_website, message, status, rejection_reason)
 	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING request_id, status, created_at
+	RETURNING id, status, created_at
 	`
 
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		req.RequestID,
+		req.UserID,
 		req.CompanyName,
 		req.CompanyWebsite,
 		req.Message,
 		req.Status,
 		req.Reason,
-	).Scan(&req.RequestID, &req.Status, &req.CreatedAt)
+	).Scan(&req.ID, &req.Status, &req.CreatedAt)
 
 	if err != nil {
 		return err
@@ -50,27 +50,29 @@ func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.
 	return nil
 }
 
-func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error) {
+func (r *PostgresRecruiterRequestRepository) GetMyRecruiterRequestByUserID(ctx context.Context, userID uuid.UUID) (*domain.RecruiterRequest, error) {
 	query := `
-	SELECT id, request_id, company_name, company_website, message, status, created_at
+	SELECT id, user_id, company_name, company_website, message, status, rejection_reason, created_at, updated_at
 	FROM recruiter_requests
-	WHERE request_id = $1
+	WHERE user_id = $1
 	`
 
 	var req domain.RecruiterRequest
-	err := r.db.QueryRowContext(ctx, query, requestID).Scan(
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(
 		&req.ID,
-		&req.RequestID,
+		&req.UserID,
 		&req.CompanyName,
 		&req.CompanyWebsite,
 		&req.Message,
 		&req.Status,
+		&req.Reason,
 		&req.CreatedAt,
+		&req.UpdatedAt,
 	)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil // Not found
+			return nil, ErrNotFound // Not found
 		}
 		return nil, err
 	}

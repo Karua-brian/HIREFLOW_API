@@ -45,8 +45,8 @@ func (s *adminService) ListRecruiterRequests(ctx context.Context, limit, offset 
 }
 
 func (s *adminService) ApproveRecruiterRequest(ctx context.Context, requestID uuid.UUID) error {
-
-	req, err := s.adminRepo.GetRecruiterRequestByUserID(ctx, requestID)
+	
+	req, err := s.adminRepo.GetRecruiterRequestByID(ctx, requestID)
 	if err != nil {
 		return err
 	}
@@ -55,19 +55,23 @@ func (s *adminService) ApproveRecruiterRequest(ctx context.Context, requestID uu
 		return ErrAlreadyAppliedRequest
 	}
 
-	err = s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
-	if err != nil {
-		return err
+	if req == nil {
+		return ErrRecruiterRequestNotFound
 	}
 
-	return s.adminRepo.UpdateUserRole(ctx, req.RequestID, "recruiter")
+	return s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
+	
 }
 
 func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error {
 
-	req, err := s.adminRepo.GetRecruiterRequestByUserID(ctx, requestID)
+	req, err := s.adminRepo.GetRecruiterRequestByID(ctx, requestID)
 	if err != nil {
 		return err
+	}
+
+	if req == nil {
+		return ErrRecruiterRequestNotFound
 	}
 
 	if req.Status != "pending" {

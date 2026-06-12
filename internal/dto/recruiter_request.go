@@ -9,9 +9,10 @@ type CreateRecruiterRequest struct {
 }
 
 type RecruiterRequestResponse struct {
-	RequestID 			uuid.UUID 	`json:"id"`
-	Status 		string 		`json:"status"`
-	Message 	string 		`json:"message"`
+	UserID 			uuid.UUID 	`json:"user_id"`
+	RequestID		uuid.UUID	`json:"request_id"`
+	Status 			string 		`json:"status"`
+	Message 		string 		`json:"message"`
 }
 
 type ListRecruiterRequestsResponse struct {
@@ -23,7 +24,7 @@ type ListRecruiterRequestsResponse struct {
 
 type RecruiterRequestSummary struct {
 	ID 				uuid.UUID	`json:"id"`
-	RequestID 		uuid.UUID	`json:"recruiter_id"`
+	UserID 			uuid.UUID	`json:"user_id"`
 	CompanyName 	string 		`json:"company_name"`
 	CompanyWebsite  string 		`json:"company_website"`
 	Message 		string 		`json:"message"`

@@ -12,7 +12,7 @@ type RecruiterRequestService interface {
 	// RequestRecruiterAccess allows a user to request recruiter access.
 	RequestRecruiterAccess(ctx context.Context, req *domain.RecruiterRequest) error
 
-	GetMyRecruiterRequest(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error)
+	GetMyRecruiterRequest(ctx context.Context, usertID uuid.UUID) (*domain.RecruiterRequest, error)
 }
 
 
@@ -33,7 +33,7 @@ func (s *recruiterRequestService) RequestRecruiterAccess(ctx context.Context, re
 
 	req.Status = "pending" // default status for new requests
 
-	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, req.RequestID)
+	existingRequest, err := s.recruiterRequestRepo.GetMyRecruiterRequestByUserID(ctx, req.UserID)
 	if err != nil && err != repository.ErrNotFound {
 		return err
 	}
@@ -44,14 +44,18 @@ func (s *recruiterRequestService) RequestRecruiterAccess(ctx context.Context, re
 	return s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
 }
 
-func (s *recruiterRequestService) GetMyRecruiterRequest(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error) {
+func (s *recruiterRequestService) GetMyRecruiterRequest(ctx context.Context, userID uuid.UUID) (*domain.RecruiterRequest, error) {
 
-	request, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, requestID)
+	request, err := s.recruiterRequestRepo.GetMyRecruiterRequestByUserID(ctx, userID)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			return nil, ErrRecruiterRequestNotFound
 		}
 		return nil, err
+	}
+
+	if request == nil {
+    	return nil, ErrRecruiterRequestNotFound
 	}
 
 	return request, nil

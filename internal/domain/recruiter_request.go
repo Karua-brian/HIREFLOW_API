@@ -8,7 +8,7 @@ import (
 
 type RecruiterRequest struct {
 	ID  		 	uuid.UUID  
-	RequestID 		uuid.UUID
+	UserID 		    uuid.UUID
 	CompanyName 	string
 	CompanyWebsite  string
 	Message 		string
