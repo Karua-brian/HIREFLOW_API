@@ -13,26 +13,26 @@ import (
 	"go.uber.org/zap"
 )
 
-type RecruiterHandler interface {
+type RecruiterRequestHandler interface {
 	RequestRecruiterAccess(w http.ResponseWriter, r *http.Request)
 
 	GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request)
 }
 
-type recruiterHandler struct {
-	service service.RecruiterService
+type recruiterRequestHandler struct {
+	service service.RecruiterRequestService
 	logger  *zap.Logger
 }
 
-func NewRecruiterHandlers(s service.RecruiterService, logger *zap.Logger) RecruiterHandler {
-	return &recruiterHandler{
+func NewRecruiterRequestHandlers(s service.RecruiterRequestService, logger *zap.Logger) RecruiterRequestHandler {
+	return &recruiterRequestHandler{
 		service: s,
 		logger:  logger,
 	}
 }
 
 // RequestRecruiterAccesss handles the HTTP request for users to request recruiter access.
-func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http.Request) {
+func (h *recruiterRequestHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http.Request) {
 	// Implementation for handling recruiter access requests
 	var req dto.CreateRecruiterRequest
 
@@ -44,7 +44,7 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 	// Basic validation (transport-level validation)
 	if err := validator.ValidateRecruiterRequest(req.CompanyName, req.CompanyWebsite, req.Message); err != nil {
 		response.Error(w, http.StatusBadRequest, "validation error", response.ValidationError{
-			Field: "company_name/company_website",
+			Field: "company_name/company_website/message",
 			Error: err.Error(),
 		})
 		return
@@ -55,10 +55,11 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 	if !ok {
 		response.Error(w, http.StatusUnauthorized, "invalid user context")
 	}
+
 	userID := user.ID
 	// Create domain object for service layer
 	request := &domain.RecruiterRequest{
-		RecruiterID:		    userID,
+		RequestID:		userID,
 		CompanyName:    req.CompanyName,
 		CompanyWebsite: req.CompanyWebsite,
 		Message:        req.Message,
@@ -80,8 +81,10 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	var resp dto.RecruiterResponse
-	resp.ID = request.ID
+
+	var resp dto.RecruiterRequestResponse
+
+	resp.RequestID = request.ID
 	resp.Status = request.Status
 	resp.Message = "Recruiter access request submitted successfully"
 
@@ -89,7 +92,7 @@ func (h *recruiterHandler) RequestRecruiterAccess(w http.ResponseWriter, r *http
 }
 
 // GetMyRecruiterRequest allows users to check the status of their recruiter access request.
-func (h *recruiterHandler) GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request) {
+func (h *recruiterRequestHandler) GetMyRecruiterRequest(w http.ResponseWriter, r *http.Request) {
 
 	user, ok := contextkeys.UserFromContext(r.Context())
 	if !ok {
@@ -107,8 +110,8 @@ func (h *recruiterHandler) GetMyRecruiterRequest(w http.ResponseWriter, r *http.
 		return
 	}
 
-	var resp dto.RecruiterResponse
-	resp.ID = request.ID
+	var resp dto.RecruiterRequestResponse
+	resp.RequestID = request.ID
 	resp.Status = request.Status
 	resp.Message = "Recruiter request status retrieved successfully"
 

@@ -8,11 +8,12 @@ import (
 
 type RecruiterRequest struct {
 	ID  		 	uuid.UUID  
-	RecruiterID 			uuid.UUID
+	RequestID 		uuid.UUID
 	CompanyName 	string
 	CompanyWebsite  string
 	Message 		string
 	Status 			string // "pending", "approved", "rejected"
+	Reason 			string
 	CreatedAt 		time.Time
 	UpdatedAt		time.Time
 }

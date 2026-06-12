@@ -13,7 +13,7 @@ import (
 func NewRouter(
 		jobHandler handlers.JobHandler, 
 		authHandler handlers.AuthHandler, 
-		recruiterHandler handlers.RecruiterHandler,
+		recruiterRequestHandler handlers.RecruiterRequestHandler,
 		adminHandler handlers.AdminHandler,
 	) http.Handler {
 
@@ -48,20 +48,19 @@ func NewRouter(
 		r.Post("/jobs/{id}/apply", jobHandler.ApplyToJob)
 
 		// Recruiter access request route - only authenticated users can request recruiter access
-		r.Post("/recruiter/requests", recruiterHandler.RequestRecruiterAccess)
-		r.Get("/recruiter/requests/me", recruiterHandler.GetMyRecruiterRequest) // Endpoint for users to check their recruiter request status
+		r.Post("/recruiter/requests", recruiterRequestHandler.RequestRecruiterAccess)
+		r.Get("/recruiter/requests/me", recruiterRequestHandler.GetMyRecruiterRequest) // Endpoint for users to check their recruiter request status
 	})
 	
-	// Protected routes (require authentication)
-	r.Group(func(r chi.Router) {
-		// Apply authentication middleware to all routes in this group
+	// Protected AdminOnly routes
+	r.Route("/admin", func(r chi.Router) {
 		r.Use(middleware.RequestID)
 		r.Use(middleware.JWTAuth)
-		r.Use(middleware.AdminOnly)	
-		// Admin routes for managing recruiter requests
-		r.Get("/admin/recruiter-requests", adminHandler.ListRecruiterRequests)
-		r.Put("/admin/recruiter-requests/{id}", adminHandler.UpdateRecruiterRequestStatus)
-		
+		r.Use(middleware.AdminOnly)
+
+		r.Get("/recruiter-requests", adminHandler.ListRecruiterRequests)
+		r.Post("/recruiter-requests/{id}/approve", adminHandler.ApproveRecruiterRequest)
+		r.Post("/recruiter-requests/{id}/reject", adminHandler.RejectRecruiterRequest)
 	})
 
 	return r

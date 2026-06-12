@@ -8,8 +8,8 @@ type CreateRecruiterRequest struct {
 	Message 		string `json:"message"`
 }
 
-type RecruiterResponse struct {
-	ID 			uuid.UUID 	`json:"id"`
+type RecruiterRequestResponse struct {
+	RequestID 			uuid.UUID 	`json:"id"`
 	Status 		string 		`json:"status"`
 	Message 	string 		`json:"message"`
 }
@@ -23,7 +23,7 @@ type ListRecruiterRequestsResponse struct {
 
 type RecruiterRequestSummary struct {
 	ID 				uuid.UUID	`json:"id"`
-	RecruiterID 	uuid.UUID	`json:"recruiter_id"`
+	RequestID 		uuid.UUID	`json:"recruiter_id"`
 	CompanyName 	string 		`json:"company_name"`
 	CompanyWebsite  string 		`json:"company_website"`
 	Message 		string 		`json:"message"`
@@ -35,3 +35,6 @@ type UpdateRecruiterRequestStatusRequest struct {
 	Status 		string 			`json:"status"` // "approved" or "rejected"
 }
 
+type RejectRecruiterRequest struct {
+	Reason 		string 		`json:"reason"`
+}

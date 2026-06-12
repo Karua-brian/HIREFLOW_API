@@ -14,7 +14,10 @@ type AdminService interface {
 	// ListRecruiterRequests allows admins to view pending recruiter requests.
 	ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error)
 
-	UpdateRecruiterRequestStatus(ctx context.Context, recruiterID uuid.UUID, status string) error
+	ApproveRecruiterRequest(ctx context.Context, requestID uuid.UUID) error
+
+	RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error
+
 }
 
 type adminService struct {
@@ -41,25 +44,35 @@ func (s *adminService) ListRecruiterRequests(ctx context.Context, limit, offset 
 	return s.adminRepo.ListRecruiterRequests(ctx, limit, offset)
 }
 
-func (s *adminService) UpdateRecruiterRequestStatus(ctx context.Context, recruiterID uuid.UUID, status string) error {
+func (s *adminService) ApproveRecruiterRequest(ctx context.Context, requestID uuid.UUID) error {
 
-	// Validate status input
-	if status != "approved" && status != "rejected" {
-		return ErrInvalidStatus
-	}
-
-	// Check if request exists
-	req, err := s.adminRepo.GetRecruiterRequestByUserID(ctx, recruiterID)
+	req, err := s.adminRepo.GetRecruiterRequestByUserID(ctx, requestID)
 	if err != nil {
-		if err == repository.ErrNotFound {
-			return repository.ErrNotFound
-		}
 		return err
 	}
 
-	if req == nil {
-		return repository.ErrNotFound
+	if req.Status != "pending" {
+		return ErrAlreadyAppliedRequest
 	}
 
-	return s.adminRepo.UpdateRecruiterRequestStatus(ctx, recruiterID, status)
+	err = s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
+	if err != nil {
+		return err
+	}
+
+	return s.adminRepo.UpdateUserRole(ctx, req.RequestID, "recruiter")
+}
+
+func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error {
+
+	req, err := s.adminRepo.GetRecruiterRequestByUserID(ctx, requestID)
+	if err != nil {
+		return err
+	}
+
+	if req.Status != "pending" {
+		return ErrAlreadyAppliedRequest
+	}
+
+	return  s.adminRepo.RejectRecruiterRequest(ctx, reason, requestID)
 }

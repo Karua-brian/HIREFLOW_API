@@ -13,7 +13,7 @@ type RecruiterRequestRepository interface {
 	CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error
 
 	// GetRecruiterRequestByID retrieves a recruiter request by its ID
-	GetRecruiterRequestByUserID(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error)
+	GetRecruiterRequestByUserID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error)
 
 }
 
@@ -27,20 +27,21 @@ func NewPostgresRecruiterRequestRepository(db *sql.DB) *PostgresRecruiterRequest
 
 func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.Context, req *domain.RecruiterRequest) error {
 	query := `
-	INSERT INTO recruiter_requests (recruiter_id, company_name, company_website, message, status)
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING recruiter_id, status, created_at
+	INSERT INTO recruiter_requests (request_id, company_name, company_website, message, status, rejection_reason)
+	VALUES ($1, $2, $3, $4, $5, $6)
+	RETURNING request_id, status, created_at
 	`
 
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
-		req.RecruiterID,
+		req.RequestID,
 		req.CompanyName,
 		req.CompanyWebsite,
 		req.Message,
 		req.Status,
-	).Scan(&req.ID, &req.Status, &req.CreatedAt)
+		req.Reason,
+	).Scan(&req.RequestID, &req.Status, &req.CreatedAt)
 
 	if err != nil {
 		return err
@@ -49,17 +50,17 @@ func (r *PostgresRecruiterRequestRepository) CreateRecruiterRequest(ctx context.
 	return nil
 }
 
-func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error) {
+func (r *PostgresRecruiterRequestRepository) GetRecruiterRequestByUserID(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error) {
 	query := `
-	SELECT id, recruiter_id, company_name, company_website, message, status, created_at
+	SELECT id, request_id, company_name, company_website, message, status, created_at
 	FROM recruiter_requests
-	WHERE recruiter_id = $1
+	WHERE request_id = $1
 	`
 
 	var req domain.RecruiterRequest
-	err := r.db.QueryRowContext(ctx, query, recruiterID).Scan(
+	err := r.db.QueryRowContext(ctx, query, requestID).Scan(
 		&req.ID,
-		&req.RecruiterID,
+		&req.RequestID,
 		&req.CompanyName,
 		&req.CompanyWebsite,
 		&req.Message,

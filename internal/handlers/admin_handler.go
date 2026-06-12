@@ -1,33 +1,35 @@
 package handlers
 
 import (
-	"errors"
 	"job_board/internal/dto"
 	"job_board/internal/service"
 	"job_board/internal/validator"
 	"job_board/pkg/response"
 	"net/http"
+	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 type AdminHandler interface {
-	
 	ListRecruiterRequests(w http.ResponseWriter, r *http.Request)
 
-	UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request)
+	ApproveRecruiterRequest(w http.ResponseWriter, r *http.Request)
+
+	RejectRecruiterRequest(w http.ResponseWriter, r *http.Request)
 }
 
 type adminHandler struct {
-	adminService 	service.AdminService
-	logger 			*zap.Logger
+	adminService service.AdminService
+	logger       *zap.Logger
 }
 
 func NewAdminHandlers(adminService service.AdminService, logger *zap.Logger) AdminHandler {
 	return &adminHandler{
-		adminService: 	adminService,	
-		logger: 		logger,
+		adminService: adminService,
+		logger:       logger,
 	}
 }
 
@@ -58,12 +60,11 @@ func (h *adminHandler) ListRecruiterRequests(w http.ResponseWriter, r *http.Requ
 	resp.Requests = make([]dto.RecruiterRequestSummary, len(requests))
 	for i, req := range requests {
 		resp.Requests[i] = dto.RecruiterRequestSummary{
-			ID:             req.ID,
-			RecruiterID:    req.RecruiterID,
-			CompanyName:    req.CompanyName,
-			CompanyWebsite: req.CompanyWebsite,
-			Message:        req.Message,
-			Status:         req.Status,
+			ID:          req.ID,
+			RequestID: 	 req.RequestID,
+			CompanyName: req.CompanyName,
+			Message:     req.Message,
+			Status:      req.Status,
 		}
 	}
 	resp.Total = total
@@ -75,39 +76,52 @@ func (h *adminHandler) ListRecruiterRequests(w http.ResponseWriter, r *http.Requ
 	response.JSON(w, http.StatusOK, resp)
 }
 
-func (h *adminHandler) UpdateRecruiterRequestStatus(w http.ResponseWriter, r *http.Request) {
-	// Implementation for updating recruiter request status (approve/reject)
-	var req dto.UpdateRecruiterRequestStatusRequest
+func (h *adminHandler) ApproveRecruiterRequest(w http.ResponseWriter, r *http.Request) {
 
-	// Decode JSON body into DTO
+	requestIDStr := chi.URLParam(r, "id")
+
+	requestID, err := uuid.Parse(requestIDStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid recruiter request id")
+		return
+	}
+
+	err = h.adminService.ApproveRecruiterRequest(r.Context(), requestID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "failed to approve recruiter request")
+		h.logger.Info("failed to approve recruiter request", zap.Error(err), zap.String("request_id", requestID.String()))
+		return
+	}
+
+	h.logger.Info("recruiter request approved", zap.String("request_id", requestID.String()))
+
+	response.JSON(w, http.StatusOK, map[string]string{
+		"message": "recruiter request approved successfully",
+	})
+}
+
+func (h *adminHandler) RejectRecruiterRequest(w http.ResponseWriter, r *http.Request) {
+
+	requestIDStr := chi.URLParam(r, "id")
+
+	requestID, err := uuid.Parse(requestIDStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid recruiter request id")
+		return
+	}
+
+	var req dto.RejectRecruiterRequest
+
+	// Use the response helper to decode JSON body and handle errors
 	if err := response.DecodeJSON(r, &req); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	// Basic validation (transport-level validation)
-	if req.ID == uuid.Nil {
-		response.Error(w, http.StatusBadRequest, "invalid recruiter request ID", response.ValidationError{
-			Field: "id",
-			Error: "ID must be a valid UUID",
-		})
+	if strings.TrimSpace(req.Reason) == "" {
+		response.Error(w, http.StatusBadRequest, "rejection reason is required")
 		return
 	}
 
-	h.logger.Info("Received request to update recruiter request status with body:", zap.Any("request_body", req))
-
-	// Call service layer to update the recruiter request status
-	err := h.adminService.UpdateRecruiterRequestStatus(r.Context(), req.ID, req.Status)
-	if err != nil {
-		if errors.Is(err, service.ErrRecruiterRequestNotFound) {
-			response.Error(w, http.StatusNotFound, "recruiter request not found")
-			return
-		}
-		response.Error(w, http.StatusInternalServerError, "failed to update recruiter request status")
-		return
-	}
-
-	response.JSON(w, http.StatusOK, map[string]string{
-		"message": "Recruiter request status updated successfully",
-	})
+	err = h.adminService.RejectRecruiterRequest(r.Context(), req.Reason, requestID)
 }

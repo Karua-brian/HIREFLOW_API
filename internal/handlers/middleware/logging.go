@@ -42,9 +42,6 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 				statusCode: 	http.StatusOK,	
 			}
 
-			// Call next handler
-			next.ServeHTTP(rec, r)
-
 			duration := time.Since(start)
 
 			// Structured logging
@@ -57,6 +54,10 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 				"duration_ms", duration.Milliseconds(),
 				"remote_addr", r.RemoteAddr,
 			)
+
+			// Call next handler
+			next.ServeHTTP(rec, r)
+			
 			})
 	}
 }

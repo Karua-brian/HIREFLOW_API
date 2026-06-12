@@ -11,11 +11,12 @@ CREATE TABLE users (
 
 CREATE TABLE recruiter_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    recruiter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    request_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     company_name TEXT NOT NULL,
     company_website TEXT,
     message TEXT,
     status TEXT NOT NULL DEFAULT 'pending',
+    rejection_reason TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

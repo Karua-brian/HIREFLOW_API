@@ -8,29 +8,32 @@ import (
 	"github.com/google/uuid"
 )
 
-type RecruiterService interface {
+type RecruiterRequestService interface {
 	// RequestRecruiterAccess allows a user to request recruiter access.
 	RequestRecruiterAccess(ctx context.Context, req *domain.RecruiterRequest) error
 
-	GetMyRecruiterRequest(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error)
+	GetMyRecruiterRequest(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error)
 }
 
 
-type recruiterService struct {
+type recruiterRequestService struct {
+
 	recruiterRequestRepo repository.RecruiterRequestRepository
 }
 
-func NewRecruiterService(recruiterRequestRepo repository.RecruiterRequestRepository) RecruiterService {
-	return &recruiterService{
+func NewRecruiterRequestService(recruiterRequestRepo repository.RecruiterRequestRepository) RecruiterRequestService {
+
+	return &recruiterRequestService{
 		recruiterRequestRepo: recruiterRequestRepo,
 	}
 }
 
 // Recruiter
-func (s *recruiterService) RequestRecruiterAccess(ctx context.Context, req *domain.RecruiterRequest) error {
+func (s *recruiterRequestService) RequestRecruiterAccess(ctx context.Context, req *domain.RecruiterRequest) error {
+
 	req.Status = "pending" // default status for new requests
 
-	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, req.RecruiterID)
+	existingRequest, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, req.RequestID)
 	if err != nil && err != repository.ErrNotFound {
 		return err
 	}
@@ -41,8 +44,9 @@ func (s *recruiterService) RequestRecruiterAccess(ctx context.Context, req *doma
 	return s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
 }
 
-func (s *recruiterService) GetMyRecruiterRequest(ctx context.Context, recruiterID uuid.UUID) (*domain.RecruiterRequest, error) {
-	request, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, recruiterID)
+func (s *recruiterRequestService) GetMyRecruiterRequest(ctx context.Context, requestID uuid.UUID) (*domain.RecruiterRequest, error) {
+
+	request, err := s.recruiterRequestRepo.GetRecruiterRequestByUserID(ctx, requestID)
 	if err != nil {
 		if err == repository.ErrNotFound {
 			return nil, ErrRecruiterRequestNotFound

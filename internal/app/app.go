@@ -46,7 +46,7 @@ import (
 
 		jobService := service.NewJobService(jobRepo, applicationRepo, workerPool)
 		authService := service.NewAuthService(userRepo, refreshTokenRepo, logger)
-		recruiterService := service.NewRecruiterService(recruiterRequestRepo)
+		recruiterRequestService := service.NewRecruiterRequestService(recruiterRequestRepo)
 		adminService := service.NewAdminService(adminRepo)
 
 		// =================
@@ -55,14 +55,14 @@ import (
 
 		jobHandler := handlers.NewJobHandlers(jobService, logger)
 		authHandler := handlers.NewAuthHandlers(authService, logger)
-		recruiterHandler := handlers.NewRecruiterHandlers(recruiterService, logger)
+		recruiterRequestHandler := handlers.NewRecruiterRequestHandlers(recruiterRequestService, logger)
 		adminHandler := handlers.NewAdminHandlers(adminService, logger)
 
 		// =================
 		// Router
 		// =================
 		
-		router := NewRouter(jobHandler, authHandler, recruiterHandler, adminHandler)
+		router := NewRouter(jobHandler, authHandler, recruiterRequestHandler, adminHandler)
 
 		return &App{
 			Router: router,
