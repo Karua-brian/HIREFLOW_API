@@ -85,6 +85,7 @@
 
 		var resp dto.RecruiterRequestResponse
 
+		resp.ID = request.ID
 		resp.UserID = request.UserID
 		resp.Status = request.Status
 		resp.Message = "Recruiter access request submitted successfully"
@@ -113,6 +114,8 @@
 		}
 
 		var resp dto.RecruiterRequestResponse
+
+		resp.ID = request.ID
 		resp.UserID = request.UserID
 		resp.Status = request.Status
 		resp.Message = "Recruiter request status retrieved successfully"
