@@ -9,8 +9,8 @@ type CreateRecruiterRequest struct {
 }
 
 type RecruiterRequestResponse struct {
+	ID 				uuid.UUID 	`json:"id"`
 	UserID 			uuid.UUID 	`json:"user_id"`
-	RequestID		uuid.UUID	`json:"request_id"`
 	Status 			string 		`json:"status"`
 	Message 		string 		`json:"message"`
 }
