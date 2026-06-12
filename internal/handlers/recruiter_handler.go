@@ -84,7 +84,7 @@ func (h *recruiterRequestHandler) RequestRecruiterAccess(w http.ResponseWriter, 
 
 	var resp dto.RecruiterRequestResponse
 
-	resp.RequestID = request.ID
+	resp.RequestID = request.RequestID
 	resp.Status = request.Status
 	resp.Message = "Recruiter access request submitted successfully"
 
