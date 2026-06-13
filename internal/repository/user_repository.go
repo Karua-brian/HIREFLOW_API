@@ -10,9 +10,14 @@ import (
 
 // UserStore defines how the service interacts with persistance for user data
 type UserRepository interface {
+
 	CreateUser(ctx context.Context, user *domain.User) error
+
 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
+
 	GetUserByID(ctx context.Context, userID uuid.UUID) (*domain.User, error)
+
+	GetAdminIDs(ctx context.Context) ([]uuid.UUID, error)
 }
 
 type PostgresUserRepository struct {
@@ -107,4 +112,35 @@ func (s *PostgresUserRepository) GetUserByID(ctx context.Context, userID uuid.UU
 	return user, nil
 }
 
+func (r *PostgresUserRepository) GetAdminIDs(ctx context.Context) ([]uuid.UUID, error) {
 
+	query := `
+	SELECT id
+	FROM users
+	WHERE role = 'admin'
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var adminIDs []uuid.UUID
+
+	for rows.Next() {
+		var id uuid.UUID
+
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+
+		adminIDs = append(adminIDs, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return adminIDs, nil
+}

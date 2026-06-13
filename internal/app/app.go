@@ -32,6 +32,7 @@ import (
 		refreshTokenRepo := repository.NewPostgresRefreshTokenRepo(db)
 		recruiterRequestRepo := repository.NewPostgresRecruiterRequestRepository(db)
 		adminRepo := repository.NewPostgresAdminRepository(db)
+		notificationRepo := repository.NewPostgresNotificationRepo(db)
 
 		// =================
 		// Worker Pool
@@ -46,8 +47,9 @@ import (
 
 		jobService := service.NewJobService(jobRepo, applicationRepo, workerPool)
 		authService := service.NewAuthService(userRepo, refreshTokenRepo, logger)
-		recruiterRequestService := service.NewRecruiterRequestService(recruiterRequestRepo)
-		adminService := service.NewAdminService(adminRepo)
+		recruiterRequestService := service.NewRecruiterRequestService(recruiterRequestRepo, notificationRepo, userRepo)
+		adminService := service.NewAdminService(adminRepo, notificationRepo)
+		notificationService := service.NewNotificationService(notificationRepo)
 
 		// =================
 		// Handlers
@@ -57,12 +59,19 @@ import (
 		authHandler := handlers.NewAuthHandlers(authService, logger)
 		recruiterRequestHandler := handlers.NewRecruiterRequestHandlers(recruiterRequestService, logger)
 		adminHandler := handlers.NewAdminHandlers(adminService, logger)
+		notificationHandler := handlers.NewNotificationHandler(notificationService, logger)
 
 		// =================
 		// Router
 		// =================
 		
-		router := NewRouter(jobHandler, authHandler, recruiterRequestHandler, adminHandler)
+		router := NewRouter(
+			jobHandler, 
+			authHandler, 
+			recruiterRequestHandler, 
+			adminHandler,
+			notificationHandler,
+		)
 
 		return &App{
 			Router: router,

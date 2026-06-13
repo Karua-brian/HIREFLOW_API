@@ -58,3 +58,17 @@ CREATE TABLE refresh_tokens (
     expires_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES user(id) ON DELETE CASCADE, 
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+
+CREATE INDEX idx_notifications_is_read ON notifications(user_id, is_read);

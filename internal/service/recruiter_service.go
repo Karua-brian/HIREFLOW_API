@@ -19,12 +19,21 @@ type RecruiterRequestService interface {
 type recruiterRequestService struct {
 
 	recruiterRequestRepo repository.RecruiterRequestRepository
+
+	notificationRepo repository.NotificationRepo
+
+	userRepo repository.UserRepository
 }
 
-func NewRecruiterRequestService(recruiterRequestRepo repository.RecruiterRequestRepository) RecruiterRequestService {
-
+func NewRecruiterRequestService(
+	recruiterRequestRepo repository.RecruiterRequestRepository,
+	notificationRepo repository.NotificationRepo,
+	userRepo repository.UserRepository,
+	) RecruiterRequestService {
 	return &recruiterRequestService{
 		recruiterRequestRepo: recruiterRequestRepo,
+		notificationRepo: notificationRepo,
+		userRepo: userRepo,
 	}
 }
 
@@ -41,7 +50,30 @@ func (s *recruiterRequestService) RequestRecruiterAccess(ctx context.Context, re
 		return ErrRecruiterRequestAlreadyExists
 	}
 
-	return s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
+	err = s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	adminIDs, err := s.userRepo.GetAdminIDs(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, adminID := range adminIDs {
+		notification := &domain.Notification{
+			UserID: adminID,
+			Type: "recruiter_request",
+			Title: "New Recruiter Request",
+			Message: req.CompanyName + " has requested recruiter access.",
+		}
+
+		err := s.notificationRepo.CreateNotification(ctx, notification)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *recruiterRequestService) GetMyRecruiterRequest(ctx context.Context, userID uuid.UUID) (*domain.RecruiterRequest, error) {

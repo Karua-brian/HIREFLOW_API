@@ -22,10 +22,14 @@ type AdminService interface {
 
 type adminService struct {
 	adminRepo repository.AdminRepository
+	notificationRepo repository.NotificationRepo
 }
 
-func NewAdminService(adminRepo repository.AdminRepository) AdminService {
-	return &adminService{adminRepo: adminRepo}
+func NewAdminService(adminRepo repository.AdminRepository, notificationRepo repository.NotificationRepo) AdminService {
+	return &adminService{
+		adminRepo: adminRepo,
+		notificationRepo: notificationRepo,
+	}
 }
 
 func (s *adminService) ListRecruiterRequests(ctx context.Context, limit, offset int) ([]domain.RecruiterRequest, int64, error) {
@@ -59,8 +63,16 @@ func (s *adminService) ApproveRecruiterRequest(ctx context.Context, requestID uu
 		return ErrRecruiterRequestNotFound
 	}
 
-	return s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
+	notification := &domain.Notification{
+		UserID: req.UserID,
+		Type: "approval",
+		Title: "Recruiter Request Approved",
+		Message: "Congratulations! Your recruiter request has been approved.", 
+	}
+
+	err = s.notificationRepo.CreateNotification(ctx, notification)
 	
+	return s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
 }
 
 func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error {
@@ -78,5 +90,14 @@ func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string
 		return ErrAlreadyAppliedRequest
 	}
 
-	return  s.adminRepo.RejectRecruiterRequest(ctx, reason, requestID)
+	notification := &domain.Notification{
+		UserID: req.UserID,
+		Type: "rejection",
+		Title: "Recruiter Request Rejected",
+		Message: reason,
+	}
+
+	err = s.notificationRepo.CreateNotification(ctx, notification)
+
+	return s.adminRepo.RejectRecruiterRequest(ctx, reason, requestID)
 }

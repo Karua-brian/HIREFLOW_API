@@ -15,6 +15,7 @@ func NewRouter(
 		authHandler handlers.AuthHandler, 
 		recruiterRequestHandler handlers.RecruiterRequestHandler,
 		adminHandler handlers.AdminHandler,
+		notificationHandler handlers.NotificationHandler,
 	) http.Handler {
 
 	r := chi.NewRouter()
@@ -61,6 +62,14 @@ func NewRouter(
 		r.Get("/recruiter-requests", adminHandler.ListRecruiterRequests)
 		r.Post("/recruiter-requests/{id}/approve", adminHandler.ApproveRecruiterRequest)
 		r.Post("/recruiter-requests/{id}/reject", adminHandler.RejectRecruiterRequest)
+	})
+
+	r.Route("/notifications", func(r chi.Router) {
+		r.Use(middleware.RequestID)
+		r.Use(middleware.JWTAuth)
+
+		r.Get("/me", notificationHandler.GetMyNotifications)
+		r.Patch("/{id}/read", notificationHandler.MarkAsRead)
 	})
 
 	return r
