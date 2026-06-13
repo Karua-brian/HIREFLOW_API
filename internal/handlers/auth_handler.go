@@ -106,7 +106,7 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	h.logger.Info("Login attempt for email:", zap.String("email", req.Email))
 
 	// Call service layer to login the user and handle specific errors
-	token, refresh, err := h.authService.Login(
+	token, refresh, user, err := h.authService.Login(
 		r.Context(),
 		req.Email,
 		req.Password,
@@ -122,10 +122,14 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return the token in the response
-	resp := map[string]string{
-		"access_token" : token,
-		"refresh_token": refresh,
-		
+	resp := dto.LoginResponse{
+		AccessToken: token,
+		RefreshToken: refresh,
+		User: dto.UserDTO{
+			ID: user.ID.String(),
+			Email: user.Email,
+			Role: user.Role,
+		},
 	}
 
 	// Return success response with token

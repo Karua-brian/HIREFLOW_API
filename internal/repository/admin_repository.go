@@ -135,6 +135,7 @@ func (r *PostgresAdminRepository) ApproveRecruiterRequest(ctx context.Context, r
 		SELECT user_id
 		FROM recruiter_requests
 		WHERE id = $1
+		FOR UPDATE
 		`,
 		requestID,
 	).Scan(&userID)
@@ -143,16 +144,27 @@ func (r *PostgresAdminRepository) ApproveRecruiterRequest(ctx context.Context, r
 		return err
 	}
 
-	query := `
-	UPDATE recruiter_requests
-	SET status = 'approved',
-		updated_at = NOW()
-	WHERE id = $1
-	`
-
-	result, err := r.db.ExecContext(ctx, query, requestID)
+	result, err := tx.ExecContext(
+		ctx,
+		`
+		UPDATE recruiter_requests
+		SET status = 'approved',
+			updated_at = NOW()
+		WHERE id = $1
+		`,
+		requestID,
+	)
 	if err != nil {
 		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err 
+	}
+
+	if rows == 0 {
+		return ErrNotFound
 	}
 
 	//
@@ -170,15 +182,6 @@ func (r *PostgresAdminRepository) ApproveRecruiterRequest(ctx context.Context, r
     if err != nil {
         return err
     }
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err 
-	}
-
-	if rows == 0 {
-		return ErrNotFound
-	}
 
 	return tx.Commit() 
 } 

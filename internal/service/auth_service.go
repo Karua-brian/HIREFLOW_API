@@ -15,7 +15,7 @@ import (
 // AuthService defines the interface for authentication related business logic.
 type AuthService interface {
 	Register(ctx context.Context, email, password string) error
-	Login(ctx context.Context, email, password string) (string, string, error) // returns a JWT token
+	Login(ctx context.Context, email, password string) (string, string, *domain.User, error) // returns a JWT token
 	Refresh(ctx context.Context, oldToken string) (newAccess string, newRefresh string, err error) // returns new JWT and refresh token
 	Logout(ctx context.Context, refreshToken string) error
 	CleanupExpiredTokens(ctx context.Context) error
@@ -70,19 +70,19 @@ func (s *authService) Register(ctx context.Context, email, password string) erro
 }
 
 // Login implements user login logic
-func (s *authService) Login(ctx context.Context, email, password string) (string, string, error) {
+func (s *authService) Login(ctx context.Context, email, password string) (string, string, *domain.User, error) {
 	
 	// Fetch user by email
 	user, err := s.userRepository.GetUserByEmail(ctx, email)
 
 	// If an error occurs while fetching the user, return invalid credentials error
 	if err != nil {
-		return "", "", ErrInvalidCredentials
+		return "", "", nil, ErrInvalidCredentials
 	}
 
 	// If user is nil, return an error
 	if user == nil {
-		return "", "", ErrInvalidCredentials
+		return "", "", nil, ErrInvalidCredentials
 	}
 
 	// Compare the provided password with the stored hashed password
@@ -93,19 +93,19 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 
 	// If password does not match, return an error
 	if err != nil {
-		return "", "", ErrInvalidCredentials
+		return "", "", nil, ErrInvalidCredentials
 	}
 
 	// Generate a JWT token for the authenticated user
 	accessToken, err := middleware.GenerateJWT(user.ID, user.Role)
 	if err != nil {
-		return "", "", err
+		return "", "", nil, err
 	}
 
 	// Generate a refresh token for the authenticated user
 	refreshToken, err := middleware.GenerateRefreshToken()
 	if err != nil {
-		return "", "", err
+		return "", "", nil, err
 	}
 		
 	expires := time.Now().Add(7 * 24 * time.Hour) // Set refresh token to expire in 7 days
@@ -121,12 +121,12 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 
 	// Return the token or an error if token generation fails
 	if err != nil {
-		return "", "", err
+		return "", "", nil, err
 	}
 		
 
 	// Return the generated token
-	return accessToken, refreshToken, nil
+	return accessToken, refreshToken, user, nil
 
 } 
 
