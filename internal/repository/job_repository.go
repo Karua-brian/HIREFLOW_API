@@ -32,7 +32,7 @@ func NewPostgresJobRepo(db *sql.DB) *PostgresJobRepository {
 func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) error {
 
 	query := `
-	INSERT INTO jobs (title, description, location, company_name, salary_range, created_by)
+	INSERT INTO jobs (title, description, location, company_name, salary_range, created_at)
 	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id, created_at
 	`
@@ -59,7 +59,7 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
 
 	query := `
-	SELECT id, title, description, location, company_name, salary_range, created_at, created_by 
+	SELECT id, title, description, location, company_name, salary_range, created_at 
 	FROM jobs
 	ORDER BY created_at DESC
 	LIMIT $1 OFFSET $2 
