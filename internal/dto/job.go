@@ -5,8 +5,8 @@ import "github.com/google/uuid"
 type CreateJobRequest struct {
 	Title       	string 		`json:"title"`
 	Description 	string 		`json:"description"`
+	Company     	string 		`json:"company_name"`	
 	Location    	string 		`json:"location,omitempty"`
-	Company     	string 		`json:"company_name"`
 	Salary      	string 		`json:"salary_range,omitempty"`
 }
 
@@ -21,7 +21,7 @@ type JobSummary struct {
 	ID         		 uuid.UUID   	`json:"id"`
 	Title      		 string 		`json:"title"`
 	Description		 string 		`json:"description"`
-	Location   		 string 		`json:"location"`
 	Company    		 string 		`json:"company_name"`
+	Location   		 string 		`json:"location"`
 	Salary      	 string 		`json:"salary_range"`
 }

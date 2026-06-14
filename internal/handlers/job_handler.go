@@ -121,9 +121,9 @@ func (h *jobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 			ID:          job.ID,
 			Title:       job.Title,
 			Description: job.Description,
+			Company:     job.Company,
 			Location:    job.Location,
 			Salary:      job.Salary,
-			Company:     job.Company,
 		}
 	}
 	// Include pagination metadata in the response
