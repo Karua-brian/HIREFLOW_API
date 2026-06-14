@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"job_board/internal/contextkeys"
+	"job_board/internal/domain"
 	"job_board/internal/dto"
 	"job_board/internal/service"
 	"job_board/pkg/response"
@@ -13,6 +14,8 @@ import (
 )
 
 type NotificationHandler interface {
+
+	CreateNotification(w http.ResponseWriter, r *http.Request)
 
 	GetMyNotifications(w http.ResponseWriter, r *http.Request)
 
@@ -29,6 +32,37 @@ func NewNotificationHandler(notificationService service.NotificationService, log
 		notificationService: notificationService,
 		logger: logger,
 	}
+}
+
+func (h *notificationHandler) CreateNotification(w http.ResponseWriter, r *http.Request) {
+	var req dto.CreateNotificationRequest
+
+	if err := response.DecodeJSON(r, &req); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	userID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	notification := &domain.Notification{
+		UserID:  userID,
+		Type:    req.Type,
+		Title:   req.Title,
+		Message: req.Message,
+		Link:    req.Link,
+	}
+
+	err = h.notificationService.CreateNotification(r.Context(), notification)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "failed to create notification")
+		return
+	}
+
+	response.JSON(w, http.StatusCreated, notification)
 }
 
 func (h *notificationHandler) GetMyNotifications(w http.ResponseWriter, r *http.Request) {

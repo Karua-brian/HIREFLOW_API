@@ -111,9 +111,10 @@ func (r *PostgresNotificationRepo) MarkAsRead(ctx context.Context, notificationI
 		UPDATE notifications
 		SET is_read = true
 		WHERE id = $1
-		AND user_id =$2
+		AND user_id = $2
 		`,
 		notificationID,
+		userID,
 	)
 
 	if err != nil {

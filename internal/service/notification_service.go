@@ -10,6 +10,8 @@ import (
 
 type NotificationService interface {
 
+	CreateNotification(ctx context.Context, notification *domain.Notification) error
+
 	GetMyNotifications(ctx context.Context, userID uuid.UUID) ([]domain.Notification, error)
 
 	MarkAsRead(ctx context.Context, notificationID, userID uuid.UUID) error
@@ -21,6 +23,10 @@ type notificationService struct {
 
 func NewNotificationService(notificationRepo repository.NotificationRepo) NotificationService {
 	return &notificationService{notificationRepo: notificationRepo}
+}
+func (s *notificationService) CreateNotification(ctx context.Context, notification *domain.Notification) error {
+	
+	return s.notificationRepo.CreateNotification(ctx, notification)
 }
 
 func (s *notificationService) GetMyNotifications(ctx context.Context, userID uuid.UUID) ([]domain.Notification, error) {

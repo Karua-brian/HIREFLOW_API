@@ -19,3 +19,11 @@ type NotificationResponse struct {
 type NotificationsListResponse struct {
 	Notifications 		[]NotificationResponse		`json:"notifications"`
 }
+
+type CreateNotificationRequest struct {
+	UserID  string `json:"user_id"`
+	Type    string `json:"type"`
+	Title   string `json:"title"`
+	Message string `json:"message"`
+	Link    string `json:"link"`
+}
