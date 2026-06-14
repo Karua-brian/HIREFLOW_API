@@ -109,7 +109,7 @@ func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string
 		Type: "rejection",
 		Title: "Recruiter Request Rejected",
 		Message: reason,
-		Link: "/recruiter/requests",
+		Link: "/jobs",
 	}
 
 	err = s.notificationRepo.CreateNotification(ctx, notification)

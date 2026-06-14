@@ -68,7 +68,7 @@ func NewRouter(
 		r.Use(middleware.RequestID)
 		r.Use(middleware.JWTAuth)
 
-		r.Get("/notifications", notificationHandler.CreateNotification)
+		//r.Get("/notifications", notificationHandler.CreateNotification)
 		r.Get("/me", notificationHandler.GetMyNotifications)
 		r.Patch("/{id}/read", notificationHandler.MarkAsRead)
 	})
