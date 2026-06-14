@@ -63,16 +63,25 @@ func (s *adminService) ApproveRecruiterRequest(ctx context.Context, requestID uu
 		return ErrRecruiterRequestNotFound
 	}
 
+	err = s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
+	if err != nil {
+		return err
+	}
+
 	notification := &domain.Notification{
 		UserID: req.UserID,
 		Type: "approval",
 		Title: "Recruiter Request Approved",
 		Message: "Congratulations! Your recruiter request has been approved.", 
+		Link: "/jobs/create",
 	}
 
 	err = s.notificationRepo.CreateNotification(ctx, notification)
+	if err != nil {
+		return err
+	}
 	
-	return s.adminRepo.ApproveRecruiterRequest(ctx, requestID)
+	return nil
 }
 
 func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string, requestID uuid.UUID) error {
@@ -90,14 +99,23 @@ func (s *adminService) RejectRecruiterRequest(ctx context.Context, reason string
 		return ErrAlreadyAppliedRequest
 	}
 
+	err = s.adminRepo.RejectRecruiterRequest(ctx, reason, requestID)
+	if err != nil {
+		return err
+	}
+
 	notification := &domain.Notification{
 		UserID: req.UserID,
 		Type: "rejection",
 		Title: "Recruiter Request Rejected",
 		Message: reason,
+		Link: "/recruiter/requests",
 	}
 
 	err = s.notificationRepo.CreateNotification(ctx, notification)
+	if err != nil {
+		return err
+	}
 
-	return s.adminRepo.RejectRecruiterRequest(ctx, reason, requestID)
+	return nil
 }

@@ -89,6 +89,7 @@
 		resp.UserID = request.UserID
 		resp.Status = request.Status
 		resp.Message = "Recruiter access request submitted successfully"
+		resp.NextURL = "/recruiter/status"
 
 		response.JSON(w, http.StatusCreated, resp)
 	}

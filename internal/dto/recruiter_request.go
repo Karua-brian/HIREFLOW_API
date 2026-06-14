@@ -13,6 +13,7 @@ type RecruiterRequestResponse struct {
 	UserID 			uuid.UUID 	`json:"user_id"`
 	Status 			string 		`json:"status"`
 	Message 		string 		`json:"message"`
+	NextURL			string		`json:"next_url,omitempty"`
 }
 
 type ListRecruiterRequestsResponse struct {

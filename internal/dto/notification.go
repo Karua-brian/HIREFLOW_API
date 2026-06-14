@@ -11,6 +11,7 @@ type NotificationResponse struct {
 	Type		string			`json:"type"`
 	Title		string			`json:"title"`
 	Message		string			`json:"message"`
+	Link		string			`json:"link"`
 	IsRead		bool			`json:"is_read"`
 	CreatedAt	time.Time		`json:"created_at"`
 }

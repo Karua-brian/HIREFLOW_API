@@ -28,8 +28,8 @@ func NewPostgresNotificationRepo(db *sql.DB) *PostgresNotificationRepo {
 func (r *PostgresNotificationRepo) CreateNotification(ctx context.Context, notification *domain.Notification) error {
 
 	query := `
-	INSERT INTO notifications (user_id, type, title, message)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO notifications (user_id, type, title, message, link)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, created_at
 	`
 
@@ -40,6 +40,7 @@ func (r *PostgresNotificationRepo) CreateNotification(ctx context.Context, notif
 		notification.Type,
 		notification.Title,
 		notification.Message,
+		notification.Link,
 	).Scan(&notification.ID, &notification.CreatedAt)
 }
 
@@ -52,6 +53,7 @@ func (r *PostgresNotificationRepo) GetUserNotifications(ctx context.Context, use
 		type,
 		title,
 		message,
+		link,
 		is_read,
 		created_at
 	FROM notifications
@@ -65,7 +67,7 @@ func (r *PostgresNotificationRepo) GetUserNotifications(ctx context.Context, use
 		userID,
 	)
 
-	if err != nil {
+	if err != nil {	
 		return nil, err
 	}
 
@@ -83,6 +85,7 @@ func (r *PostgresNotificationRepo) GetUserNotifications(ctx context.Context, use
 			&n.Type,
 			&n.Title,
 			&n.Message,
+			&n.Link,
 			&n.IsRead,
 			&n.CreatedAt,
 		)

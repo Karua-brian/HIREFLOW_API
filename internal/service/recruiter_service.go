@@ -66,6 +66,7 @@ func (s *recruiterRequestService) RequestRecruiterAccess(ctx context.Context, re
 			Type: "recruiter_request",
 			Title: "New Recruiter Request",
 			Message: req.CompanyName + " has requested recruiter access.",
+			Link: "/admin/recruiter-requests", 
 		}
 
 		err := s.notificationRepo.CreateNotification(ctx, notification)

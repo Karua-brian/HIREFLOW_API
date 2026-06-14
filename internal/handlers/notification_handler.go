@@ -59,6 +59,7 @@ func (h *notificationHandler) GetMyNotifications(w http.ResponseWriter, r *http.
 				Type: 		n.Type,
 				Title: 		n.Title,
 				Message: 	n.Message,
+				Link: 		n.Link,
 				IsRead: 	n.IsRead,
 				CreatedAt:  n.CreatedAt	,
 			}
