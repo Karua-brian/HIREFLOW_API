@@ -61,7 +61,7 @@ CREATE TABLE refresh_tokens (
 
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES user(id) ON DELETE CASCADE, 
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, 
     type TEXT NOT NULL,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
