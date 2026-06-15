@@ -79,7 +79,7 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call service layer (business rules happen there)
-	err := h.service.CreateJob(r.Context(), job)
+	err := h.service.CreateJob(r.Context(), job, userID)
 	if err != nil {
 		if errors.Is(err, service.ErrUnauthorized) {
 			h.mapError(w, err) // Map to 401 unauthorized

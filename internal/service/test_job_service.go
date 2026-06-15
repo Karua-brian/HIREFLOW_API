@@ -15,7 +15,7 @@ import (
 // mockJobStore implemnts store.JobStore for testing purposes
 // It allows us to test JobService without a database
 type mockJobRepository struct {
-	createFunc func(ctx context.Context, job *domain.Job) error
+	createFunc func(ctx context.Context, job *domain.Job, userID uuid.UUID) error
 	listFunc   func(ctx context.Context, limit, offset int) ([]domain.Job, int64, error)
 }
 
@@ -39,8 +39,8 @@ func (m *mockApplicationRepository) Exists(ctx context.Context, jobID, userID uu
 	return m.existsFunc(ctx, jobID, userID)
 }
 
-func (m *mockJobRepository) Create(ctx context.Context, job *domain.Job) error {
-	return m.createFunc(ctx, job)
+func (m *mockJobRepository) Create(ctx context.Context, job *domain.Job, userID uuid.UUID) error {
+	return m.createFunc(ctx, job, userID)
 }
 
 func (m *mockJobRepository) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
@@ -58,6 +58,7 @@ func (m *mockApplicationRepository) CreateTx(ctx context.Context, fn func(reposi
 
 func TestCreateJob_Unauthorized(t *testing.T) {
 
+
 	// Create a mock store - will not be called in this test
 	mockStore := &mockJobRepository{}
 
@@ -72,9 +73,10 @@ func TestCreateJob_Unauthorized(t *testing.T) {
 		Description: "Build APIs",
 		Company:     "Acme Corp",
 	}
-
+	user := &domain.User{}
+	
 	// Call CreateJob
-	err := svc.CreateJob(ctx, job)
+	err := svc.CreateJob(ctx, job, userID)
 
 	// Expected ErrUnauthorized
 	if !errors.Is(err, ErrUnauthorized) {

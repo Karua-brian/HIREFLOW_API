@@ -15,7 +15,7 @@ import (
 type JobService interface {
 
 	// CreateJob applies business rules before storing.
-	CreateJob(ctx context.Context, job *domain.Job) error
+	CreateJob(ctx context.Context, job *domain.Job, userID uuid.UUID) error
 
 	// ListJobs returns jobs (public endpoint)
 	ListJobs(ctx context.Context, limit, offset int) ([]domain.Job, int64, error)
@@ -46,7 +46,7 @@ func NewJobService(
 }
 
 // CreateJob implements business rules and delegates to the underlying store if supported.
-func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
+func (s *jobService) CreateJob(ctx context.Context, job *domain.Job, userID uuid.UUID) error {
 
 	// Extract user from context
 	// Authenticatioon middleware should have 
@@ -62,7 +62,7 @@ func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
 	}
 
 	// Call store to persist
-	return s.jobRepository.Create(ctx, job)
+	return s.jobRepository.Create(ctx, job, userID)
 	
 }
 

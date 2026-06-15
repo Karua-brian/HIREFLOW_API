@@ -15,7 +15,7 @@ type JobRepository interface {
 
 	// Create inserts a new job into the database
 	// It should set job.ID and job.CreatedAt.
-	Create(ctx context.Context, job *domain.Job) error
+	Create(ctx context.Context, job *domain.Job, userID uuid.UUID) error
 
 	// List retrieves all jobs
 	// Later we will add pagination and filtering -> List returns jobs with limit
@@ -32,7 +32,7 @@ func NewPostgresJobRepo(db *sql.DB) *PostgresJobRepository {
 }
 
 // Implement Create
-func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) error {
+func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job, userID uuid.UUID) error {
 
 	query := `
 	INSERT INTO jobs (recruiter_user_id, title, description, company_name, location, salary_range)
