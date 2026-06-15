@@ -35,7 +35,7 @@ func NewPostgresJobRepo(db *sql.DB) *PostgresJobRepository {
 func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) error {
 
 	query := `
-	INSERT INTO jobs (title, description, company_name, location, salary_range)
+	INSERT INTO jobs (recruiter_user_id, title, description, company_name, location, salary_range)
 	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, created_at
 	`
@@ -44,6 +44,7 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
+		job.RecruiterUserID,
 		job.Title,
 		job.Description,
 		job.Company,
@@ -51,11 +52,11 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 		job.Salary,
 	).Scan(&job.ID, &job.CreatedAt)
 	if job.ID == uuid.Nil {
-	return fmt.Errorf("job ID not returned from database")
-}
-
+		return fmt.Errorf("job ID not returned from database")
+	}
+	
 	if err != nil {
-		return err
+		return fmt.Errorf("created job failed: %w", err)
 	}
 
 	return nil

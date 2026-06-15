@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"job_board/internal/contextkeys"
 	"job_board/internal/domain"
 	"job_board/internal/dto"
 	"job_board/internal/service"
@@ -41,6 +42,14 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	// Decode request body into domain.Job
 	// We only accept Title, Description, Company from client
+
+	user, ok := contextkeys.UserFromContext(r.Context())
+		if !ok {
+			response.Error(w, http.StatusUnauthorized, "invalid user context")
+			return 
+		}
+		userID := user.ID
+
 	var req dto.CreateJobRequest
 
 	if err := response.DecodeJSON(r, &req); err != nil {
@@ -65,6 +74,7 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 		Company:     req.Company,
 		Location:    req.Location,
 		Salary:      req.Salary,
+		RecruiterUserID:  userID,
 		// CreatedBy will be set in the service layer based on the authenticated user
 	}
 

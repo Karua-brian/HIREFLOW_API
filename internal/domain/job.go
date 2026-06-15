@@ -11,6 +11,7 @@ import (
 // It represents how the business thinks abour a job posting
 type Job struct {
 	ID 				uuid.UUID       // unique identifier (set by database)
+	RecruiterUserID		uuid.UUID
 	Title 			string 		// Job title
 	Description 	string 		// Detailed description
 	Company 		string 		// Company offering the job
