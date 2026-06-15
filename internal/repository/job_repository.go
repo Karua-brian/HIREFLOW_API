@@ -36,7 +36,7 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 
 	query := `
 	INSERT INTO jobs (recruiter_user_id, title, description, company_name, location, salary_range)
-	VALUES ($1, $2, $3, $4, $5)
+	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id, created_at
 	`
 
