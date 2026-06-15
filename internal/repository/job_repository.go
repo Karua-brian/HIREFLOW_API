@@ -3,7 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"job_board/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 // JobStore defines how the service interacts with persistence
@@ -32,8 +35,8 @@ func NewPostgresJobRepo(db *sql.DB) *PostgresJobRepository {
 func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) error {
 
 	query := `
-	INSERT INTO jobs (title, description, company_name, location, salary_range, created_at)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO jobs (title, description, company_name, location, salary_range)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, created_at
 	`
 
@@ -47,6 +50,9 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 		job.Location,
 		job.Salary,
 	).Scan(&job.ID, &job.CreatedAt)
+	if job.ID == uuid.Nil {
+	return fmt.Errorf("job ID not returned from database")
+}
 
 	if err != nil {
 		return err

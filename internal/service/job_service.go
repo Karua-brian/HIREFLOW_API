@@ -63,6 +63,7 @@ func (s *jobService) CreateJob(ctx context.Context, job *domain.Job) error {
 
 	// Call store to persist
 	return s.jobRepository.Create(ctx, job)
+	
 }
 
 // ListJobs returns jobs by delegating to the underlying store if supported.

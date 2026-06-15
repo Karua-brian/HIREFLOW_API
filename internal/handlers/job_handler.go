@@ -70,13 +70,18 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	// Call service layer (business rules happen there)
 	err := h.service.CreateJob(r.Context(), job)
-
 	if err != nil {
 		if errors.Is(err, service.ErrUnauthorized) {
 			h.mapError(w, err) // Map to 401 unauthorized
 			h.logger.Info("unauthorized attempt to create job:", zap.Error(err))
 			return
 		}
+	}
+
+	if err != nil {
+    	h.logger.Error("create job failed", zap.Error(err))
+    	response.Error(w, http.StatusInternalServerError, err.Error())
+    	return 
 	}
 
 	// Success response
