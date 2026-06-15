@@ -66,7 +66,7 @@ func (s *PostgresJobRepository) Create(ctx context.Context, job *domain.Job) err
 func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]domain.Job, int64, error) {
 
 	query := `
-	SELECT id, title, description, company_name, location, salary_range, created_at 
+	SELECT id, recruiter_user_id, title, description, company_name, location, salary_range, created_at 
 	FROM jobs
 	ORDER BY created_at DESC
 	LIMIT $1 OFFSET $2 
@@ -89,6 +89,7 @@ func (s *PostgresJobRepository) List(ctx context.Context, limit, offset int) ([]
 		
 		if err := rows.Scan(
 			&job.ID,
+			&job.RecruiterUserID,
 			&job.Title,
 			&job.Description,
 			&job.Company,

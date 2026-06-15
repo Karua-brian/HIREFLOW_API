@@ -19,6 +19,7 @@ type ListJobsResponse struct {
 
 type JobSummary struct {
 	ID         		 uuid.UUID   	`json:"id"`
+	RecruiterUserID	 uuid.UUID		`json:"recruiter_user_id"`
 	Title      		 string 		`json:"title"`
 	Description		 string 		`json:"description"`
 	Company    		 string 		`json:"company_name"`

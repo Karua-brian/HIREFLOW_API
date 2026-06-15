@@ -69,12 +69,12 @@ func (h *jobHandler) CreateJob(w http.ResponseWriter, r *http.Request) {
 
 	// Create domain job object
 	job := &domain.Job{
+		RecruiterUserID:  userID,
 		Title:       req.Title,
 		Description: req.Description,
 		Company:     req.Company,
 		Location:    req.Location,
 		Salary:      req.Salary,
-		RecruiterUserID:  userID,
 		// CreatedBy will be set in the service layer based on the authenticated user
 	}
 
@@ -134,6 +134,7 @@ func (h *jobHandler) ListJobs(w http.ResponseWriter, r *http.Request) {
 	for i, job := range jobs {
 		resp.Jobs[i] = dto.JobSummary{
 			ID:          job.ID,
+			RecruiterUserID:  job.RecruiterUserID,
 			Title:       job.Title,
 			Description: job.Description,
 			Company:     job.Company,
