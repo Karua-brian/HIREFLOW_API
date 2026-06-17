@@ -76,7 +76,7 @@ func TestCreateJob_Unauthorized(t *testing.T) {
 	user := &domain.User{}
 	
 	// Call CreateJob
-	err := svc.CreateJob(ctx, job, userID)
+	err := svc.CreateJob(ctx, job, user.ID)
 
 	// Expected ErrUnauthorized
 	if !errors.Is(err, ErrUnauthorized) {
@@ -108,7 +108,7 @@ func TestCreateJob_Forbidden(t *testing.T) {
 	}
 
 	// Call CreateJob
-	err = svc.CreateJob(ctx, job)
+	err = svc.CreateJob(ctx, job, userID)
 
 	// Expected ErrUnauthorized
 	if !errors.Is(err, ErrForbidden) {
@@ -122,7 +122,7 @@ func TestCreateJob_Success(t *testing.T) {
 	called := false
 
 	mockStore := &mockJobRepository{
-		createFunc: func(ctx context.Context, job *domain.Job) error {
+		createFunc: func(ctx context.Context, job *domain.Job, userID uuid.UUID) error {
 			called = true
 			return nil
 		},
@@ -143,7 +143,7 @@ func TestCreateJob_Success(t *testing.T) {
 		Company:     "Acme Corp",
 	}
 
-	err := svc.CreateJob(ctx, job)
+	err := svc.CreateJob(ctx, job, userID)
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
