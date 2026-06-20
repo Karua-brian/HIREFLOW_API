@@ -7,14 +7,14 @@ func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		allowedOrigins := map[string]bool{
-			"https://hireflow-karuas-projects.vercel.app": true,
+			"https://www.hireflow.space": true,
 			
 		}
 
 		if allowedOrigins[r.Header.Get("Origin")] {
 			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "https://hireflow-karuas-projects.vercel.app")
+			w.Header().Set("Access-Control-Allow-Origin", "https://www.hireflow.space")
 		}
 		
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
