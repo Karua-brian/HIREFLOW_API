@@ -8,7 +8,6 @@ import (
 	"job_board/pkg/response"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
@@ -19,7 +18,7 @@ type NotificationHandler interface {
 
 	GetMyNotifications(w http.ResponseWriter, r *http.Request)
 
-	MarkAsRead(w http.ResponseWriter, r *http.Request)
+	MarkAllAsRead(w http.ResponseWriter, r *http.Request)
 }
 
 type notificationHandler struct {
@@ -103,20 +102,20 @@ func (h *notificationHandler) GetMyNotifications(w http.ResponseWriter, r *http.
 
 }
 
-func (h *notificationHandler) MarkAsRead(w http.ResponseWriter, r *http.Request) {
+func (h *notificationHandler) MarkAllAsRead(w http.ResponseWriter, r *http.Request) {
 
-	idStr := chi.URLParam(r, "id")
+	// idStr := chi.URLParam(r, "id")
 
-	id, err := uuid.Parse(idStr)
+	// id, err := uuid.Parse(idStr)
 
-	if err != nil {
-		response.Error(
-			w,
-			http.StatusBadRequest,
-			"invalid notification id",
-		)
-		return
-	}
+	// if err != nil {
+	// 	response.Error(
+	// 		w,
+	// 		http.StatusBadRequest,
+	// 		"invalid notification id",
+	// 	)
+	// 	return
+	// }
 
 	user, ok := contextkeys.UserFromContext(r.Context())
 	if !ok {
@@ -124,7 +123,7 @@ func (h *notificationHandler) MarkAsRead(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = h.notificationService.MarkAsRead(r.Context(), id, user.ID)
+	err := h.notificationService.MarkAllAsRead(r.Context(), user.ID)
 
 	if err != nil {
 		response.Error(

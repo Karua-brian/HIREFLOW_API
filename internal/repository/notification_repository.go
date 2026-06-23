@@ -14,7 +14,7 @@ type NotificationRepo interface {
 
 	GetUserNotifications(ctx context.Context, userID uuid.UUID) ([]domain.Notification, error)
 
-	MarkAsRead(ctx context.Context, noticiationID, userID uuid.UUID) error
+	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
 }
 
 type PostgresNotificationRepo struct {
@@ -103,26 +103,20 @@ func (r *PostgresNotificationRepo) GetUserNotifications(ctx context.Context, use
 	return notifications, nil
 }
 
-func (r *PostgresNotificationRepo) MarkAsRead(ctx context.Context, notificationID, userID uuid.UUID) error {
+func (r *PostgresNotificationRepo) MarkAllAsRead(ctx context.Context, userID uuid.UUID) error {
 
-	result, err := r.db.ExecContext(
-		ctx,
-		`
+
+	query := `
 		UPDATE notifications
 		SET is_read = true
-		WHERE id = $1
-		AND user_id = $2
-		`,
-		notificationID,
-		userID,
-	)
+		WHERE user_id = $1
+		AND is_read = false
+		`
 
-	if err != nil {
-		return err
-	}
+	result, err := r.db.ExecContext(ctx, query, userID)
+	if err != nil {return err}
 
 	rows, err := result.RowsAffected()
-
 	if err != nil {
 		return err
 	}

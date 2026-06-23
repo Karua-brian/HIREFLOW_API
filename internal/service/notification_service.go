@@ -14,7 +14,7 @@ type NotificationService interface {
 
 	GetMyNotifications(ctx context.Context, userID uuid.UUID) ([]domain.Notification, error)
 
-	MarkAsRead(ctx context.Context, notificationID, userID uuid.UUID) error
+	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
 }
 
 type notificationService struct {
@@ -34,7 +34,7 @@ func (s *notificationService) GetMyNotifications(ctx context.Context, userID uui
 	return s.notificationRepo.GetUserNotifications(ctx, userID)
 }
 
-func (s *notificationService) MarkAsRead(ctx context.Context, notificationID, userID uuid.UUID) error {
+func (s *notificationService) MarkAllAsRead(ctx context.Context, userID uuid.UUID) error {
 
-	return s.notificationRepo.MarkAsRead(ctx, notificationID, userID)
+	return s.notificationRepo.MarkAllAsRead(ctx, userID)
 }

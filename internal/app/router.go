@@ -70,7 +70,7 @@ func NewRouter(
 
 		//r.Get("/notifications", notificationHandler.CreateNotification)
 		r.Get("/me", notificationHandler.GetMyNotifications)
-		r.Patch("/{id}/read", notificationHandler.MarkAsRead)
+		r.Patch("/read-all", notificationHandler.MarkAllAsRead)
 	})
 
 	return r
