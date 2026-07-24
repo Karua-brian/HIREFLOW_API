@@ -23,17 +23,21 @@ type recruiterRequestService struct {
 	notificationRepo repository.NotificationRepo
 
 	userRepo repository.UserRepository
+
+	notificationService NotificationService
 }
 
 func NewRecruiterRequestService(
 	recruiterRequestRepo repository.RecruiterRequestRepository,
 	notificationRepo repository.NotificationRepo,
 	userRepo repository.UserRepository,
+	notificationService NotificationService,
 	) RecruiterRequestService {
 	return &recruiterRequestService{
 		recruiterRequestRepo: recruiterRequestRepo,
 		notificationRepo: notificationRepo,
 		userRepo: userRepo,
+		notificationService: notificationService,
 	}
 }
 
@@ -51,6 +55,11 @@ func (s *recruiterRequestService) RequestRecruiterAccess(ctx context.Context, re
 	}
 
 	err = s.recruiterRequestRepo.CreateRecruiterRequest(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	err = s.notificationService.NewRecruiterRequest(ctx, req)
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ import (
 type NotificationRepo interface {
 
 	CreateNotification(ctx context.Context, notification *domain.Notification) error 
-
+	
 	GetUserNotifications(ctx context.Context, userID uuid.UUID) ([]domain.Notification, error)
 
 	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
